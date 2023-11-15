@@ -141,6 +141,7 @@ export function createResolveNode(
               if (node.name.value === varDirective.name) {
                 return fieldArgValueNode;
               }
+              return node;
             },
             [Kind.VARIABLE_DEFINITION](node) {
               if (node.variable.name.value === varDirective.name) {
@@ -149,6 +150,7 @@ export function createResolveNode(
                   name: fieldArgValueNode.name,
                 };
               }
+              return node;
             },
           });
           // If it is not a variable in the actual operation, use the value as the default value for the variable

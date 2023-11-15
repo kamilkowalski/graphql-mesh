@@ -73,7 +73,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
           },
         },
       }),
-      [MapperKind.ENUM_VALUE]: (valueConfig, valueName) => ({
+      [MapperKind.ENUM_VALUE]: (valueConfig, _typeName, _schema, externalValue) => ({
         ...valueConfig,
         extensions: {
           ...valueConfig.extensions,
@@ -81,7 +81,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
             ...((valueConfig.extensions?.directives as any) || {}),
             source: {
               subgraph: subgraphName,
-              name: valueName,
+              name: externalValue,
             },
           },
         },
