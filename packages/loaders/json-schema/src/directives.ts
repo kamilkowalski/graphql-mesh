@@ -38,6 +38,9 @@ export const LengthDirective = new GraphQLDirective({
   name: 'length',
   locations: [DirectiveLocation.SCALAR],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     min: {
       type: GraphQLInt,
     },
@@ -84,6 +87,9 @@ export const DiscriminatorDirective = new GraphQLDirective({
   name: 'discriminator',
   locations: [DirectiveLocation.INTERFACE, DirectiveLocation.UNION],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     field: {
       type: GraphQLString,
     },
@@ -106,6 +112,11 @@ export function processDiscriminatorAnnotations({
 export const ResolveRootDirective = new GraphQLDirective({
   name: 'resolveRoot',
   locations: [DirectiveLocation.FIELD_DEFINITION],
+  args: {
+    subgraph: {
+      type: GraphQLString,
+    },
+  },
 });
 
 function rootResolver(root: any) {
@@ -124,6 +135,9 @@ export const ResolveRootFieldDirective = new GraphQLDirective({
     DirectiveLocation.INPUT_FIELD_DEFINITION,
   ],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     field: {
       type: GraphQLString,
     },
@@ -162,6 +176,9 @@ export const RegExpDirective = new GraphQLDirective({
   name: 'regexp',
   locations: [DirectiveLocation.SCALAR],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     pattern: {
       type: GraphQLString,
     },
@@ -194,6 +211,9 @@ export const PubSubOperationDirective = new GraphQLDirective({
   name: 'pubsubOperation',
   locations: [DirectiveLocation.FIELD_DEFINITION],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     pubsubTopic: {
       type: GraphQLString,
     },
@@ -242,6 +262,9 @@ export const TypeScriptDirective = new GraphQLDirective({
   name: 'typescript',
   locations: [DirectiveLocation.SCALAR, DirectiveLocation.ENUM],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     type: {
       type: GraphQLString,
     },
@@ -304,6 +327,9 @@ export const HTTPOperationDirective = new GraphQLDirective({
   name: 'httpOperation',
   locations: [DirectiveLocation.FIELD_DEFINITION],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     path: {
       type: GraphQLString,
     },
@@ -345,7 +371,7 @@ export const GlobalOptionsDirective = new GraphQLDirective({
   name: 'globalOptions',
   locations: [DirectiveLocation.OBJECT],
   args: {
-    sourceName: {
+    subgraph: {
       type: GraphQLString,
     },
     endpoint: {
@@ -366,6 +392,11 @@ export const GlobalOptionsDirective = new GraphQLDirective({
 export const ResponseMetadataDirective = new GraphQLDirective({
   name: 'responseMetadata',
   locations: [DirectiveLocation.FIELD_DEFINITION],
+  args: {
+    subgraph: {
+      type: GraphQLString,
+    },
+  },
 });
 
 export function processResponseMetadataAnnotations(field: GraphQLField<any, any>) {
@@ -398,6 +429,9 @@ export const LinkResolverDirective = new GraphQLDirective({
   name: 'linkResolver',
   locations: [DirectiveLocation.FIELD_DEFINITION],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     linkResolverMap: {
       type: ObjMapScalar,
     },
@@ -496,6 +530,11 @@ export function processLinkFieldAnnotations(
 export const DictionaryDirective = new GraphQLDirective({
   name: 'dictionary',
   locations: [DirectiveLocation.FIELD_DEFINITION],
+  args: {
+    subgraph: {
+      type: GraphQLString,
+    },
+  },
 });
 
 export function processDictionaryDirective(
@@ -520,6 +559,11 @@ export function processDictionaryDirective(
 export const FlattenDirective = new GraphQLDirective({
   name: 'flatten',
   locations: [DirectiveLocation.FIELD_DEFINITION],
+  args: {
+    subgraph: {
+      type: GraphQLString,
+    },
+  },
 });
 
 export function processFlattenAnnotations(field: GraphQLField<any, any>) {
@@ -707,6 +751,9 @@ export const StatusCodeTypeNameDirective = new GraphQLDirective({
   locations: [DirectiveLocation.UNION],
   isRepeatable: true,
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     typeName: {
       type: GraphQLString,
     },
@@ -720,6 +767,9 @@ export const EnumDirective = new GraphQLDirective({
   name: 'enum',
   locations: [DirectiveLocation.ENUM_VALUE],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     value: {
       type: GraphQLString,
     },
@@ -745,6 +795,9 @@ export const ExampleDirective = new GraphQLDirective({
     DirectiveLocation.SCALAR,
   ],
   args: {
+    subgraph: {
+      type: GraphQLString,
+    },
     value: {
       type: ObjMapScalar,
     },

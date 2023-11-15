@@ -8,17 +8,17 @@ exports[`Algolia schema with nested one Of should generate the correct schema: s
 
 directive @oneOf on OBJECT | INTERFACE | INPUT_OBJECT
 
-directive @resolveRoot on FIELD_DEFINITION
+directive @resolveRoot(subgraph: String) on FIELD_DEFINITION
 
-directive @flatten on FIELD_DEFINITION
+directive @flatten(subgraph: String) on FIELD_DEFINITION
 
-directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(sourceName: "algolia-nested-one-of", endpoint: "https://{args.appId:myAppId}.algolia.net") {
+type Query @globalOptions(subgraph: "algolia-nested-one-of", endpoint: "https://{args.appId:myAppId}.algolia.net") {
   "Retrieve the Rule with the specified objectID."
-  getRule(appId: String = "myAppId"): rule @httpOperation(path: "/1/indexes/", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  getRule(appId: String = "myAppId"): rule @httpOperation(subgraph: "algolia-nested-one-of", path: "/1/indexes/", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 
 "Rule object."
@@ -32,12 +32,12 @@ type consequence {
 }
 
 type consequenceParams {
-  facetFilters: [String] @flatten
+  facetFilters: [String] @flatten(subgraph: "algolia-nested-one-of")
 }
 
 type Mutation {
   "Create or update the Rule with the specified objectID."
-  saveRule(appId: String = "myAppId", input: rule_Input): String @httpOperation(path: "/1/indexes/", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
+  saveRule(appId: String = "myAppId", input: rule_Input): String @httpOperation(subgraph: "algolia-nested-one-of", path: "/1/indexes/", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
 }
 
 "Rule object."
@@ -54,7 +54,7 @@ input consequenceParams_Input {
   facetFilters: [facetFilters_Input]
 }
 
-input facetFilters_Input @oneOf {
+input facetFilters_Input @oneOf(subgraph: "algolia-nested-one-of") {
   String_list: [String]
   String: String
 }

@@ -38,11 +38,11 @@ describe('Pet', () => {
         query: Query
       }
 
-      directive @discriminator(field: String, mapping: ObjMap) on INTERFACE | UNION
+      directive @discriminator(subgraph: String, field: String, mapping: ObjMap) on INTERFACE | UNION
 
-      directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+      directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-      directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+      directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
       type Dog implements Pet {
         dog_exclusive: String
@@ -50,7 +50,7 @@ describe('Pet', () => {
         petType: String
       }
 
-      interface Pet @discriminator(field: "petType", mapping: "{\\"Dog\\":\\"Dog\\",\\"Cat\\":\\"Cat\\"}") {
+      interface Pet @discriminator(subgraph: "Pet", field: "petType", mapping: "{\\"Dog\\":\\"Dog\\",\\"Cat\\":\\"Cat\\"}") {
         name: String!
         petType: String
       }
@@ -61,8 +61,8 @@ describe('Pet', () => {
         petType: String
       }
 
-      type Query @globalOptions(sourceName: "Pet", endpoint: "http://example.com") {
-        pets_by_id(id: String!): Pet @httpOperation(path: "/pets/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+      type Query @globalOptions(subgraph: "Pet", endpoint: "http://example.com") {
+        pets_by_id(id: String!): Pet @httpOperation(subgraph: "Pet", path: "/pets/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
       }
 
       scalar ObjMap

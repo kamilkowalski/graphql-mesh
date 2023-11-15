@@ -12,6 +12,7 @@
       "packages/transforms/*",
       "packages/mergers/*",
       "packages/plugins/*",
+      "packages/fusion/*",
       "examples/*",
       "examples/federation-example/*",
       "examples/graphql-file-upload-example/frontend",

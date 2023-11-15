@@ -5,12 +5,12 @@ exports[`Query Params queryParamsSample with invalid param names: queryParamsSam
   query: Query
 }
 
-directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(sourceName: "test", endpoint: "http://localhost:3000") {
-  test(foo_bar: String): JSON @httpOperation(path: "/test", httpMethod: GET, queryParamArgMap: "{\\"foo:bar\\":\\"foo_bar\\"}")
+type Query @globalOptions(subgraph: "test", endpoint: "http://localhost:3000") {
+  test(foo_bar: String): JSON @httpOperation(subgraph: "test", path: "/test", httpMethod: GET, queryParamArgMap: "{\\"foo:bar\\":\\"foo_bar\\"}")
 }
 
 "The \`JSON\` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."

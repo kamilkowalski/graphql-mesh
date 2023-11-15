@@ -5,14 +5,14 @@ exports[`additionalProperties should generate the schema correctly: schema 1`] =
   query: Query
 }
 
-directive @dictionary on FIELD_DEFINITION
+directive @dictionary(subgraph: String) on FIELD_DEFINITION
 
-directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(sourceName: "additionalPropertiesTest", endpoint: "http://localhost:3000") {
-  test: test_200_response @httpOperation(path: "/test", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+type Query @globalOptions(subgraph: "additionalPropertiesTest", endpoint: "http://localhost:3000") {
+  test: test_200_response @httpOperation(subgraph: "additionalPropertiesTest", path: "/test", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 
 type test_200_response {
@@ -27,7 +27,7 @@ type query_test_foo {
 
 type query_test_qux {
   quux: String
-  additionalProperties: [query_test_qux_additionalProperties_entry] @dictionary
+  additionalProperties: [query_test_qux_additionalProperties_entry] @dictionary(subgraph: "additionalPropertiesTest")
 }
 
 type query_test_qux_additionalProperties_entry {

@@ -6,39 +6,39 @@ exports[`Spotify should generate correct schema: spotify-schema 1`] = `
   mutation: Mutation
 }
 
-directive @enum(value: String) on ENUM_VALUE
+directive @enum(subgraph: String, value: String) on ENUM_VALUE
 
-directive @typescript(type: String) on SCALAR | ENUM
+directive @typescript(subgraph: String, type: String) on SCALAR | ENUM
 
-directive @example(value: ObjMap) repeatable on FIELD_DEFINITION | OBJECT | INPUT_OBJECT | ENUM | SCALAR
+directive @example(subgraph: String, value: ObjMap) repeatable on FIELD_DEFINITION | OBJECT | INPUT_OBJECT | ENUM | SCALAR
 
-directive @resolveRoot on FIELD_DEFINITION
+directive @resolveRoot(subgraph: String) on FIELD_DEFINITION
 
 directive @oneOf on OBJECT | INTERFACE | INPUT_OBJECT
 
-directive @discriminator(field: String, mapping: ObjMap) on INTERFACE | UNION
+directive @discriminator(subgraph: String, field: String, mapping: ObjMap) on INTERFACE | UNION
 
-directive @statusCodeTypeName(typeName: String, statusCode: ID) repeatable on UNION
+directive @statusCodeTypeName(subgraph: String, typeName: String, statusCode: ID) repeatable on UNION
 
-directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com/v1") {
+type Query @globalOptions(subgraph: "test", endpoint: "https://api.spotify.com/v1") {
   "Get Spotify catalog information for a single album.\\n"
   get_an_album(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the album."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): AlbumObject @httpOperation(path: "/albums/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): AlbumObject @httpOperation(subgraph: "test", path: "/albums/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for multiple albums identified by their Spotify IDs.\\n"
   get_multiple_albums(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the albums. Maximum: 20 IDs."
     ids: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ManyAlbums_response @httpOperation(path: "/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
+  ): ManyAlbums_response @httpOperation(subgraph: "test", path: "/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
   "Get Spotify catalog information about an album’s tracks.\\nOptional parameters can be used to limit the number of tracks returned.\\n"
   get_an_albums_tracks(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the album."
@@ -49,17 +49,17 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSimplifiedTrackObject @httpOperation(path: "/albums/{args.id}/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSimplifiedTrackObject @httpOperation(subgraph: "test", path: "/albums/{args.id}/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get Spotify catalog information for a single artist identified by their unique Spotify ID.\\n"
   get_an_artist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the artist."
     id: String!
-  ): ArtistObject @httpOperation(path: "/artists/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): ArtistObject @httpOperation(subgraph: "test", path: "/artists/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get Spotify catalog information for several artists based on their Spotify IDs.\\n"
   get_multiple_artists(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the artists. Maximum: 50 IDs."
     ids: String!
-  ): ManyArtists_response @httpOperation(path: "/artists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): ManyArtists_response @httpOperation(subgraph: "test", path: "/artists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get Spotify catalog information about an artist's albums.\\n"
   get_an_artists_albums(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the artist."
@@ -72,33 +72,33 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSimplifiedAlbumObject @httpOperation(path: "/artists/{args.id}/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"include_groups\\":\\"include_groups\\",\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSimplifiedAlbumObject @httpOperation(subgraph: "test", path: "/artists/{args.id}/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"include_groups\\":\\"include_groups\\",\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get Spotify catalog information about an artist's top tracks by country.\\n"
   get_an_artists_top_tracks(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the artist."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ManyTracks_response @httpOperation(path: "/artists/{args.id}/top-tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): ManyTracks_response @httpOperation(subgraph: "test", path: "/artists/{args.id}/top-tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information about artists similar to a given artist. Similarity is based on analysis of the Spotify community's [listening history](http://news.spotify.com/se/2010/02/03/related-artists/).\\n"
   get_an_artists_related_artists(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the artist."
     id: String!
-  ): ManyArtists_response @httpOperation(path: "/artists/{args.id}/related-artists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): ManyArtists_response @httpOperation(subgraph: "test", path: "/artists/{args.id}/related-artists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get Spotify catalog information for a single show identified by its\\nunique Spotify ID.\\n"
   get_a_show(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the show."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ShowObject @httpOperation(path: "/shows/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): ShowObject @httpOperation(subgraph: "test", path: "/shows/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for several shows based on their Spotify IDs.\\n"
   get_multiple_shows(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the shows. Maximum: 50 IDs."
     ids: String!
-  ): ManySimplifiedShows_response @httpOperation(path: "/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"ids\\":\\"ids\\"}")
+  ): ManySimplifiedShows_response @httpOperation(subgraph: "test", path: "/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"ids\\":\\"ids\\"}")
   "Get Spotify catalog information about an show’s episodes. Optional parameters can be used to limit the number of episodes returned.\\n"
   get_a_shows_episodes(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the show."
@@ -109,35 +109,35 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSimplifiedEpisodeObject @httpOperation(path: "/shows/{args.id}/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSimplifiedEpisodeObject @httpOperation(subgraph: "test", path: "/shows/{args.id}/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get Spotify catalog information for a single episode identified by its\\nunique Spotify ID.\\n"
   get_an_episode(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) for the episode."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): EpisodeObject @httpOperation(path: "/episodes/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): EpisodeObject @httpOperation(subgraph: "test", path: "/episodes/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for several episodes based on their Spotify IDs.\\n"
   get_multiple_episodes(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the episodes. Maximum: 50 IDs."
     ids: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ManyEpisodes_response @httpOperation(path: "/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
+  ): ManyEpisodes_response @httpOperation(subgraph: "test", path: "/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for a single audiobook.<br />\\n**Note: Audiobooks are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   get_an_audiobook(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the audiobook."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): AudiobookObject @httpOperation(path: "/audiobooks/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): AudiobookObject @httpOperation(subgraph: "test", path: "/audiobooks/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for several audiobooks identified by their Spotify IDs.<br />\\n**Note: Audiobooks are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   get_multiple_audiobooks(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=18yVqkdbdRvS24c0Ilj2ci,1HGw3J3NxZO1TP1BTtVhpZ\`. Maximum: 50 IDs."
     ids: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ManyAudiobooks_response @httpOperation(path: "/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
+  ): ManyAudiobooks_response @httpOperation(subgraph: "test", path: "/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
   "Get Spotify catalog information about an audiobook's chapters.<br />\\n**Note: Audiobooks are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   get_audiobook_chapters(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the audiobook."
@@ -148,47 +148,47 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSimplifiedChapterObject @httpOperation(path: "/audiobooks/{args.id}/chapters", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSimplifiedChapterObject @httpOperation(subgraph: "test", path: "/audiobooks/{args.id}/chapters", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get a list of the audiobooks saved in the current Spotify user's 'Your Music' library.\\n"
   get_users_saved_audiobooks(
     "The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50."
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSimplifiedAudiobookObject @httpOperation(path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSimplifiedAudiobookObject @httpOperation(subgraph: "test", path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Check if one or more audiobooks are already saved in the current Spotify user's library.\\n"
   check_users_saved_audiobooks(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=18yVqkdbdRvS24c0Ilj2ci,1HGw3J3NxZO1TP1BTtVhpZ\`. Maximum: 50 IDs."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/audiobooks/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/audiobooks/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get Spotify catalog information for a single chapter.<br />\\n**Note: Chapters are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   get_a_chapter(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the chapter."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ChapterObject @httpOperation(path: "/chapters/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): ChapterObject @httpOperation(subgraph: "test", path: "/chapters/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for several chapters identified by their Spotify IDs.<br />\\n**Note: Chapters are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   get_several_chapters(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=0IsXVP0JmcB2adSE338GkK,3ZXb8FKZGU0EHALYX6uCzU\`. Maximum: 50 IDs."
     ids: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): ManyChapters_response @httpOperation(path: "/chapters", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
+  ): ManyChapters_response @httpOperation(subgraph: "test", path: "/chapters", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for a single track identified by its\\nunique Spotify ID.\\n"
   get_track(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the track."
     id: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): TrackObject @httpOperation(path: "/tracks/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
+  ): TrackObject @httpOperation(subgraph: "test", path: "/tracks/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\"}")
   "Get Spotify catalog information for multiple tracks based on their Spotify IDs.\\n"
   get_several_tracks(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=4iV5W9uYEdYUVa79Axb7Rh,1301WleyT98MSxVHPZCA6M\`. Maximum: 50 IDs."
     ids: String!
-  ): ManyTracks_response @httpOperation(path: "/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"ids\\":\\"ids\\"}")
+  ): ManyTracks_response @httpOperation(subgraph: "test", path: "/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"ids\\":\\"ids\\"}")
   "Get Spotify catalog information about albums, artists, playlists, tracks, shows, episodes or audiobooks\\nthat match a keyword string.<br />\\n**Note: Audiobooks are only available for the US, UK, Ireland, New Zealand and Australia markets.**\\n"
   search(
     "Your search query.\\n\\nYou can narrow down your search using field filters. The available filters are \`album\`, \`artist\`, \`track\`, \`year\`, \`upc\`, \`tag:hipster\`, \`tag:new\`, \`isrc\`, and \`genre\`. Each field filter only applies to certain result types.\\n\\nThe \`artist\` and \`year\` filters can be used while searching albums, artists and tracks. You can filter on a single \`year\` or a range (e.g. 1955-1960).<br />\\nThe \`album\` filter can be used while searching albums and tracks.<br />\\nThe \`genre\` filter can be used while searching artists and tracks.<br />\\nThe \`isrc\` and \`track\` filters can be used while searching tracks.<br />\\nThe \`upc\`, \`tag:new\` and \`tag:hipster\` filters can only be used while searching albums. The \`tag:new\` filter will return albums released in the past two weeks and \`tag:hipster\` can be used to return only albums with the lowest 10% popularity.<br />"
@@ -202,9 +202,9 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     "The index of the first result to return. Use\\nwith limit to get the next page of search results."
     offset: NonNegativeInt
     include_external: Include_External
-  ): SearchItems_response @httpOperation(path: "/search", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"q\\":\\"q\\",\\"type\\":\\"type\\",\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"include_external\\":\\"include_external\\"}", queryStringOptionsByParam: "{\\"type\\":{\\"arrayFormat\\":\\"comma\\"}}")
+  ): SearchItems_response @httpOperation(subgraph: "test", path: "/search", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"q\\":\\"q\\",\\"type\\":\\"type\\",\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"include_external\\":\\"include_external\\"}", queryStringOptionsByParam: "{\\"type\\":{\\"arrayFormat\\":\\"comma\\"}}")
   "Get detailed profile information about the current user (including the\\ncurrent user's username).\\n"
-  get_current_users_profile: PrivateUserObject @httpOperation(path: "/me", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  get_current_users_profile: PrivateUserObject @httpOperation(subgraph: "test", path: "/me", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get a playlist owned by a Spotify user.\\n"
   get_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
@@ -215,7 +215,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     fields: String
     "A comma-separated list of item types that your client supports besides the default \`track\` type. Valid types are: \`track\` and \`episode\`.<br/>\\n_**Note**: This parameter was introduced to allow existing clients to maintain their current behaviour and might be deprecated in the future._<br/>\\nIn addition to providing this parameter, make sure that your client properly handles cases of new types in the future by checking against the \`type\` field of each object."
     additional_types: String
-  ): PlaylistObject @httpOperation(path: "/playlists/{args.playlist_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"fields\\":\\"fields\\",\\"additional_types\\":\\"additional_types\\"}")
+  ): PlaylistObject @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"fields\\":\\"fields\\",\\"additional_types\\":\\"additional_types\\"}")
   "Get full details of the items of a playlist owned by a Spotify user.\\n"
   get_playlists_tracks(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
@@ -230,14 +230,14 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     offset: Int
     "A comma-separated list of item types that your client supports besides the default \`track\` type. Valid types are: \`track\` and \`episode\`.<br/>\\n_**Note**: This parameter was introduced to allow existing clients to maintain their current behaviour and might be deprecated in the future._<br/>\\nIn addition to providing this parameter, make sure that your client properly handles cases of new types in the future by checking against the \`type\` field of each object."
     additional_types: String
-  ): PagingPlaylistTrackObject @httpOperation(path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"fields\\":\\"fields\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"additional_types\\":\\"additional_types\\"}")
+  ): PagingPlaylistTrackObject @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"fields\\":\\"fields\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"additional_types\\":\\"additional_types\\"}")
   "Get a list of the playlists owned or followed by the current Spotify\\nuser.\\n"
   get_a_list_of_current_users_playlists(
     "The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50."
     limit: NonNegativeInt = 20
     "'The index of the first playlist to return. Default:\\n0 (the first object). Maximum offset: 100.000\\\\. Use with \`limit\` to get the\\nnext set of playlists.'"
     offset: Int
-  ): PagingPlaylistObject @httpOperation(path: "/me/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingPlaylistObject @httpOperation(subgraph: "test", path: "/me/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get a list of the albums saved in the current Spotify user's 'Your Music' library.\\n"
   get_users_saved_albums(
     "The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50."
@@ -246,12 +246,12 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     offset: Int
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): PagingSavedAlbumObject @httpOperation(path: "/me/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"market\\":\\"market\\"}")
+  ): PagingSavedAlbumObject @httpOperation(subgraph: "test", path: "/me/albums", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\",\\"market\\":\\"market\\"}")
   "Check if one or more albums is already saved in the current Spotify user's 'Your Music' library.\\n"
   check_users_saved_albums(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the albums. Maximum: 20 IDs."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/albums/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/albums/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get a list of the songs saved in the current Spotify user's 'Your Music' library.\\n"
   get_users_saved_tracks(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
@@ -260,12 +260,12 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSavedTrackObject @httpOperation(path: "/me/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSavedTrackObject @httpOperation(subgraph: "test", path: "/me/tracks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Check if one or more tracks is already saved in the current Spotify user's 'Your Music' library.\\n"
   check_users_saved_tracks(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=4iV5W9uYEdYUVa79Axb7Rh,1301WleyT98MSxVHPZCA6M\`. Maximum: 50 IDs."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/tracks/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/tracks/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get a list of the episodes saved in the current Spotify user's library.<br/>\\nThis API endpoint is in __beta__ and could change without warning. Please share any feedback that you have, or issues that you discover, in our [developer community forum](https://community.spotify.com/t5/Spotify-for-Developers/bd-p/Spotify_Developer).\\n"
   get_users_saved_episodes(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
@@ -274,24 +274,24 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSavedEpisodeObject @httpOperation(path: "/me/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSavedEpisodeObject @httpOperation(subgraph: "test", path: "/me/episodes", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Check if one or more episodes is already saved in the current Spotify user's 'Your Episodes' library.<br/>\\nThis API endpoint is in __beta__ and could change without warning. Please share any feedback that you have, or issues that you discover, in our [developer community forum](https://community.spotify.com/t5/Spotify-for-Developers/bd-p/Spotify_Developer)..\\n"
   check_users_saved_episodes(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the episodes. Maximum: 50 IDs."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/episodes/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/episodes/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get a list of shows saved in the current Spotify user's library. Optional parameters can be used to limit the number of shows returned.\\n"
   get_users_saved_shows(
     "The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50."
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingSavedShowObject @httpOperation(path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingSavedShowObject @httpOperation(subgraph: "test", path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Check if one or more shows is already saved in the current Spotify user's library.\\n"
   check_users_saved_shows(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the shows. Maximum: 50 IDs."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/shows/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/shows/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get the current user's top artists or tracks based on calculated affinity.\\n"
   get_users_top_artists_and_tracks(
     type: Type!
@@ -301,12 +301,12 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingArtistOrTrackObject_response @httpOperation(path: "/me/top/{args.type}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"time_range\\":\\"time_range\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingArtistOrTrackObject_response @httpOperation(subgraph: "test", path: "/me/top/{args.type}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"time_range\\":\\"time_range\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get public profile information about a Spotify user.\\n"
   get_users_profile(
     "The user's [Spotify user ID](/documentation/web-api/concepts/spotify-uris-ids)."
     user_id: String!
-  ): PublicUserObject @httpOperation(path: "/users/{args.user_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): PublicUserObject @httpOperation(subgraph: "test", path: "/users/{args.user_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get a list of the playlists owned or followed by a Spotify user.\\n"
   get_list_users_playlists(
     "The user's [Spotify user ID](/documentation/web-api/concepts/spotify-uris-ids)."
@@ -315,7 +315,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first playlist to return. Default:\\n0 (the first object). Maximum offset: 100.000\\\\. Use with \`limit\` to get the\\nnext set of playlists."
     offset: Int
-  ): PagingPlaylistObject @httpOperation(path: "/users/{args.user_id}/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingPlaylistObject @httpOperation(subgraph: "test", path: "/users/{args.user_id}/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get a list of Spotify featured playlists (shown, for example, on a Spotify player's 'Browse' tab).\\n"
   get_featured_playlists(
     "A country: an [ISO 3166-1 alpha-2 country code](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2). Provide this parameter if you want the list of returned items to be relevant to a particular country. If omitted, the returned items will be relevant to all countries."
@@ -328,7 +328,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingFeaturedPlaylistObject @httpOperation(path: "/browse/featured-playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\",\\"timestamp\\":\\"timestamp\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingFeaturedPlaylistObject @httpOperation(subgraph: "test", path: "/browse/featured-playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\",\\"timestamp\\":\\"timestamp\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get a list of categories used to tag items in Spotify (on, for example, the Spotify player’s “Browse” tab).\\n"
   get_categories(
     "A country: an [ISO 3166-1 alpha-2 country code](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2). Provide this parameter if you want to narrow the list of returned categories to those relevant to a particular country. If omitted, the returned items will be globally relevant."
@@ -339,7 +339,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagedCategories_response @httpOperation(path: "/browse/categories", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagedCategories_response @httpOperation(subgraph: "test", path: "/browse/categories", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get a single category used to tag items in Spotify (on, for example, the Spotify player’s “Browse” tab).\\n"
   get_a_category(
     "The [Spotify category ID](/documentation/web-api/concepts/spotify-uris-ids) for the category."
@@ -348,7 +348,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     country: String
     "The desired language, consisting of an [ISO 639-1](http://en.wikipedia.org/wiki/ISO_639-1) language code and an [ISO 3166-1 alpha-2 country code](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2), joined by an underscore. For example: \`es_MX\`, meaning &quot;Spanish (Mexico)&quot;. Provide this parameter if you want the category strings returned in a particular language.<br/> _**Note**: if \`locale\` is not supplied, or if the specified language is not available, the category strings returned will be in the Spotify default language (American English)._"
     locale: String
-  ): CategoryObject @httpOperation(path: "/browse/categories/{args.category_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\"}")
+  ): CategoryObject @httpOperation(subgraph: "test", path: "/browse/categories/{args.category_id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"locale\\":\\"locale\\"}")
   "Get a list of Spotify playlists tagged with a particular category.\\n"
   get_a_categories_playlists(
     "The [Spotify category ID](/documentation/web-api/concepts/spotify-uris-ids) for the category."
@@ -359,12 +359,12 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagingFeaturedPlaylistObject @httpOperation(path: "/browse/categories/{args.category_id}/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagingFeaturedPlaylistObject @httpOperation(subgraph: "test", path: "/browse/categories/{args.category_id}/playlists", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get the current image associated with a specific playlist.\\n"
   get_playlist_cover(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
-  ): [ImageObject] @httpOperation(path: "/playlists/{args.playlist_id}/images", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): [ImageObject] @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/images", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get a list of new album releases featured in Spotify (shown, for example, on a Spotify player’s “Browse” tab).\\n"
   get_new_releases(
     "A country: an [ISO 3166-1 alpha-2 country code](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2). Provide this parameter if you want the list of returned items to be relevant to a particular country. If omitted, the returned items will be relevant to all countries."
@@ -373,7 +373,7 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     limit: NonNegativeInt = 20
     "The index of the first item to return. Default: 0 (the first item). Use with limit to get the next set of items."
     offset: Int
-  ): PagedAlbums_response @httpOperation(path: "/browse/new-releases", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
+  ): PagedAlbums_response @httpOperation(subgraph: "test", path: "/browse/new-releases", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"country\\":\\"country\\",\\"limit\\":\\"limit\\",\\"offset\\":\\"offset\\"}")
   "Get the current user's followed artists.\\n"
   get_followed(
     type: Item_Type!
@@ -381,35 +381,35 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     after: String
     "The maximum number of items to return. Default: 20\\\\. Minimum: 1\\\\. Maximum: 50\\\\."
     limit: NonNegativeInt = 20
-  ): CursorPagedArtists_response @httpOperation(path: "/me/following", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"type\\":\\"type\\",\\"after\\":\\"after\\",\\"limit\\":\\"limit\\"}")
+  ): CursorPagedArtists_response @httpOperation(subgraph: "test", path: "/me/following", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"type\\":\\"type\\",\\"after\\":\\"after\\",\\"limit\\":\\"limit\\"}")
   "Check to see if the current user is following one or more artists or other Spotify users.\\n"
   check_current_user_follows(
     type: queryInput_check_current_user_follows_type!
     "A comma-separated list of the artist or the user [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) to check. For example: \`ids=74ASZWbe4lXaubB36ztrGX,08td7MxkoHQkXnWAYD8d6Q\`. A maximum of 50 IDs can be sent in one request."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/me/following/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/me/following/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
   "Check to see if one or more Spotify users are following a specified playlist.\\n"
   check_if_user_follows_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
     "A comma-separated list of [Spotify User IDs](/documentation/web-api/concepts/spotify-uris-ids) ; the ids of the users that you want to check to see if they follow the playlist. Maximum: 5 ids."
     ids: String!
-  ): [Boolean] @httpOperation(path: "/playlists/{args.playlist_id}/followers/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): [Boolean] @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/followers/contains", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get audio features for multiple tracks based on their Spotify IDs.\\n"
   get_several_audio_features(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the tracks. Maximum: 100 IDs."
     ids: String!
-  ): ManyAudioFeatures_response @httpOperation(path: "/audio-features", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): ManyAudioFeatures_response @httpOperation(subgraph: "test", path: "/audio-features", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Get audio feature information for a single track identified by its unique\\nSpotify ID.\\n"
   get_audio_features(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) for the track."
     id: String!
-  ): AudioFeaturesObject @httpOperation(path: "/audio-features/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): AudioFeaturesObject @httpOperation(subgraph: "test", path: "/audio-features/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get a low-level audio analysis for a track in the Spotify catalog. The audio analysis describes the track’s structure and musical content, including rhythm, pitch, and timbre.\\n"
   get_audio_analysis(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids)\\nfor the track."
     id: String!
-  ): AudioAnalysisObject @httpOperation(path: "/audio-analysis/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  ): AudioAnalysisObject @httpOperation(subgraph: "test", path: "/audio-analysis/{args.id}", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Recommendations are generated based on the available information for a given seed entity and matched against similar artists and tracks. If there is sufficient information about the provided seeds, a list of tracks will be returned together with pool size details.\\n\\nFor artists and tracks that are very new or obscure there might not be enough data to generate a list of tracks.\\n"
   get_recommendations(
     "The target size of the list of recommended tracks. For seeds with unusually small pools or when highly restrictive filtering is applied, it may be impossible to generate the requested number of recommended tracks. Debugging information for such cases is available in the response. Default: 20\\\\. Minimum: 1\\\\. Maximum: 100."
@@ -506,25 +506,25 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     max_valence: NonNegativeFloat
     "For each of the tunable track attributes (below) a target value may be provided. Tracks with the attribute values nearest to the target values will be preferred. For example, you might request \`target_energy=0.6\` and \`target_danceability=0.8\`. All target values will be weighed equally in ranking results."
     target_valence: NonNegativeFloat
-  ): RecommendationsObject @httpOperation(path: "/recommendations", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"market\\":\\"market\\",\\"seed_artists\\":\\"seed_artists\\",\\"seed_genres\\":\\"seed_genres\\",\\"seed_tracks\\":\\"seed_tracks\\",\\"min_acousticness\\":\\"min_acousticness\\",\\"max_acousticness\\":\\"max_acousticness\\",\\"target_acousticness\\":\\"target_acousticness\\",\\"min_danceability\\":\\"min_danceability\\",\\"max_danceability\\":\\"max_danceability\\",\\"target_danceability\\":\\"target_danceability\\",\\"min_duration_ms\\":\\"min_duration_ms\\",\\"max_duration_ms\\":\\"max_duration_ms\\",\\"target_duration_ms\\":\\"target_duration_ms\\",\\"min_energy\\":\\"min_energy\\",\\"max_energy\\":\\"max_energy\\",\\"target_energy\\":\\"target_energy\\",\\"min_instrumentalness\\":\\"min_instrumentalness\\",\\"max_instrumentalness\\":\\"max_instrumentalness\\",\\"target_instrumentalness\\":\\"target_instrumentalness\\",\\"min_key\\":\\"min_key\\",\\"max_key\\":\\"max_key\\",\\"target_key\\":\\"target_key\\",\\"min_liveness\\":\\"min_liveness\\",\\"max_liveness\\":\\"max_liveness\\",\\"target_liveness\\":\\"target_liveness\\",\\"min_loudness\\":\\"min_loudness\\",\\"max_loudness\\":\\"max_loudness\\",\\"target_loudness\\":\\"target_loudness\\",\\"min_mode\\":\\"min_mode\\",\\"max_mode\\":\\"max_mode\\",\\"target_mode\\":\\"target_mode\\",\\"min_popularity\\":\\"min_popularity\\",\\"max_popularity\\":\\"max_popularity\\",\\"target_popularity\\":\\"target_popularity\\",\\"min_speechiness\\":\\"min_speechiness\\",\\"max_speechiness\\":\\"max_speechiness\\",\\"target_speechiness\\":\\"target_speechiness\\",\\"min_tempo\\":\\"min_tempo\\",\\"max_tempo\\":\\"max_tempo\\",\\"target_tempo\\":\\"target_tempo\\",\\"min_time_signature\\":\\"min_time_signature\\",\\"max_time_signature\\":\\"max_time_signature\\",\\"target_time_signature\\":\\"target_time_signature\\",\\"min_valence\\":\\"min_valence\\",\\"max_valence\\":\\"max_valence\\",\\"target_valence\\":\\"target_valence\\"}")
+  ): RecommendationsObject @httpOperation(subgraph: "test", path: "/recommendations", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"market\\":\\"market\\",\\"seed_artists\\":\\"seed_artists\\",\\"seed_genres\\":\\"seed_genres\\",\\"seed_tracks\\":\\"seed_tracks\\",\\"min_acousticness\\":\\"min_acousticness\\",\\"max_acousticness\\":\\"max_acousticness\\",\\"target_acousticness\\":\\"target_acousticness\\",\\"min_danceability\\":\\"min_danceability\\",\\"max_danceability\\":\\"max_danceability\\",\\"target_danceability\\":\\"target_danceability\\",\\"min_duration_ms\\":\\"min_duration_ms\\",\\"max_duration_ms\\":\\"max_duration_ms\\",\\"target_duration_ms\\":\\"target_duration_ms\\",\\"min_energy\\":\\"min_energy\\",\\"max_energy\\":\\"max_energy\\",\\"target_energy\\":\\"target_energy\\",\\"min_instrumentalness\\":\\"min_instrumentalness\\",\\"max_instrumentalness\\":\\"max_instrumentalness\\",\\"target_instrumentalness\\":\\"target_instrumentalness\\",\\"min_key\\":\\"min_key\\",\\"max_key\\":\\"max_key\\",\\"target_key\\":\\"target_key\\",\\"min_liveness\\":\\"min_liveness\\",\\"max_liveness\\":\\"max_liveness\\",\\"target_liveness\\":\\"target_liveness\\",\\"min_loudness\\":\\"min_loudness\\",\\"max_loudness\\":\\"max_loudness\\",\\"target_loudness\\":\\"target_loudness\\",\\"min_mode\\":\\"min_mode\\",\\"max_mode\\":\\"max_mode\\",\\"target_mode\\":\\"target_mode\\",\\"min_popularity\\":\\"min_popularity\\",\\"max_popularity\\":\\"max_popularity\\",\\"target_popularity\\":\\"target_popularity\\",\\"min_speechiness\\":\\"min_speechiness\\",\\"max_speechiness\\":\\"max_speechiness\\",\\"target_speechiness\\":\\"target_speechiness\\",\\"min_tempo\\":\\"min_tempo\\",\\"max_tempo\\":\\"max_tempo\\",\\"target_tempo\\":\\"target_tempo\\",\\"min_time_signature\\":\\"min_time_signature\\",\\"max_time_signature\\":\\"max_time_signature\\",\\"target_time_signature\\":\\"target_time_signature\\",\\"min_valence\\":\\"min_valence\\",\\"max_valence\\":\\"max_valence\\",\\"target_valence\\":\\"target_valence\\"}")
   "Retrieve a list of available genres seed parameter values for [recommendations](/documentation/web-api/reference/get-recommendations).\\n"
-  get_recommendation_genres: ManyGenres_response @httpOperation(path: "/recommendations/available-genre-seeds", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  get_recommendation_genres: ManyGenres_response @httpOperation(subgraph: "test", path: "/recommendations/available-genre-seeds", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get information about the user’s current playback state, including track or episode, progress, and active device.\\n"
   get_information_about_the_users_current_playback(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
     "A comma-separated list of item types that your client supports besides the default \`track\` type. Valid types are: \`track\` and \`episode\`.<br/>\\n_**Note**: This parameter was introduced to allow existing clients to maintain their current behaviour and might be deprecated in the future._<br/>\\nIn addition to providing this parameter, make sure that your client properly handles cases of new types in the future by checking against the \`type\` field of each object."
     additional_types: String
-  ): get_information_about_the_users_current_playback_response @httpOperation(path: "/me/player", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"additional_types\\":\\"additional_types\\"}")
+  ): get_information_about_the_users_current_playback_response @httpOperation(subgraph: "test", path: "/me/player", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"additional_types\\":\\"additional_types\\"}")
   "Get information about a user’s available devices.\\n"
-  get_a_users_available_devices: ManyDevices_response @httpOperation(path: "/me/player/devices", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  get_a_users_available_devices: ManyDevices_response @httpOperation(subgraph: "test", path: "/me/player/devices", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get the object currently being played on the user's Spotify account.\\n"
   get_the_users_currently_playing_track(
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
     "A comma-separated list of item types that your client supports besides the default \`track\` type. Valid types are: \`track\` and \`episode\`.<br/>\\n_**Note**: This parameter was introduced to allow existing clients to maintain their current behaviour and might be deprecated in the future._<br/>\\nIn addition to providing this parameter, make sure that your client properly handles cases of new types in the future by checking against the \`type\` field of each object."
     additional_types: String
-  ): CurrentlyPlayingContextObject @httpOperation(path: "/me/player/currently-playing", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"additional_types\\":\\"additional_types\\"}")
+  ): CurrentlyPlayingContextObject @httpOperation(subgraph: "test", path: "/me/player/currently-playing", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"market\\":\\"market\\",\\"additional_types\\":\\"additional_types\\"}")
   "Get tracks from the current user's recently played tracks.\\n_**Note**: Currently doesn't support podcast episodes._\\n"
   get_recently_played(
     "The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50."
@@ -533,11 +533,11 @@ type Query @globalOptions(sourceName: "test", endpoint: "https://api.spotify.com
     after: Int
     "A Unix timestamp in milliseconds. Returns all items\\nbefore (but not including) this cursor position. If \`before\` is specified,\\n\`after\` must not be specified."
     before: Int
-  ): CursorPagingPlayHistoryObject @httpOperation(path: "/me/player/recently-played", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"after\\":\\"after\\",\\"before\\":\\"before\\"}")
+  ): CursorPagingPlayHistoryObject @httpOperation(subgraph: "test", path: "/me/player/recently-played", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET, queryParamArgMap: "{\\"limit\\":\\"limit\\",\\"after\\":\\"after\\",\\"before\\":\\"before\\"}")
   "Get the list of objects that make up the user's queue.\\n"
-  get_queue: QueueObject @httpOperation(path: "/me/player/queue", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  get_queue: QueueObject @httpOperation(subgraph: "test", path: "/me/player/queue", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Get the list of markets where Spotify is available.\\n"
-  get_available_markets: get_available_markets_200_response @httpOperation(path: "/markets", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  get_available_markets: get_available_markets_200_response @httpOperation(subgraph: "test", path: "/markets", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 
 "An album"
@@ -616,8 +616,8 @@ enum query_get_an_album_allOf_0_restrictions_reason {
   explicit
 }
 
-enum album_const @typescript(type: "\\"album\\"") @example(value: "\\"album\\"") {
-  album @enum(value: "\\"album\\"")
+enum album_const @typescript(subgraph: "test", type: "\\"album\\"") @example(subgraph: "test", value: "\\"album\\"") {
+  album @enum(subgraph: "test", value: "\\"album\\"")
 }
 
 "A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt."
@@ -667,8 +667,8 @@ type FollowersObject {
   total: Int
 }
 
-enum artist_const @typescript(type: "\\"artist\\"") @example(value: "\\"artist\\"") {
-  artist @enum(value: "\\"artist\\"")
+enum artist_const @typescript(subgraph: "test", type: "\\"artist\\"") @example(subgraph: "test", value: "\\"artist\\"") {
+  artist @enum(subgraph: "test", value: "\\"artist\\"")
 }
 
 "Pages of tracks"
@@ -872,8 +872,8 @@ type TrackObject {
 "The \`JSON\` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
 scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
 
-enum track_const @typescript(type: "\\"track\\"") @example(value: "\\"track\\"") {
-  track @enum(value: "\\"track\\"")
+enum track_const @typescript(subgraph: "test", type: "\\"track\\"") @example(subgraph: "test", value: "\\"track\\"") {
+  track @enum(subgraph: "test", value: "\\"track\\"")
 }
 
 "A show"
@@ -913,8 +913,8 @@ type ShowObject {
   episodes: PagingSimplifiedEpisodeObject!
 }
 
-enum show_const @typescript(type: "\\"show\\"") @example(value: "\\"show\\"") {
-  show @enum(value: "\\"show\\"")
+enum show_const @typescript(subgraph: "test", type: "\\"show\\"") @example(subgraph: "test", value: "\\"show\\"") {
+  show @enum(subgraph: "test", value: "\\"show\\"")
 }
 
 "Pages of episodes"
@@ -970,7 +970,7 @@ type SimplifiedEpisodeObject {
   "The [Spotify URI](/documentation/web-api/concepts/spotify-uris-ids) for the episode."
   uri: URL!
   restrictions: EpisodeRestrictionObject
-  JSON: JSON @resolveRoot
+  JSON: JSON @resolveRoot(subgraph: "test")
 }
 
 "Represents date values"
@@ -990,8 +990,8 @@ type ResumePointObject {
   resume_position_ms: Int
 }
 
-enum episode_const @typescript(type: "\\"episode\\"") @example(value: "\\"episode\\"") {
-  episode @enum(value: "\\"episode\\"")
+enum episode_const @typescript(subgraph: "test", type: "\\"episode\\"") @example(subgraph: "test", value: "\\"episode\\"") {
+  episode @enum(subgraph: "test", value: "\\"episode\\"")
 }
 
 type EpisodeRestrictionObject {
@@ -1037,7 +1037,7 @@ type SimplifiedShowObject {
   uri: String!
   "The total number of episodes in the show."
   total_episodes: Int!
-  JSON: JSON @resolveRoot
+  JSON: JSON @resolveRoot(subgraph: "test")
 }
 
 "An episode"
@@ -1136,8 +1136,8 @@ type NarratorObject {
   name: String
 }
 
-enum audiobook_const @typescript(type: "\\"audiobook\\"") @example(value: "\\"audiobook\\"") {
-  audiobook @enum(value: "\\"audiobook\\"")
+enum audiobook_const @typescript(subgraph: "test", type: "\\"audiobook\\"") @example(subgraph: "test", value: "\\"audiobook\\"") {
+  audiobook @enum(subgraph: "test", value: "\\"audiobook\\"")
 }
 
 "Pages of chapters"
@@ -1193,7 +1193,7 @@ type SimplifiedChapterObject {
   "The [Spotify URI](/documentation/web-api/concepts/spotify-uris-ids) for the episode."
   uri: URL!
   restrictions: ChapterRestrictionObject
-  JSON: JSON @resolveRoot
+  JSON: JSON @resolveRoot(subgraph: "test")
 }
 
 "The precision with which \`release_date\` value is known."
@@ -1267,7 +1267,7 @@ type SimplifiedAudiobookObject {
   uri: String!
   "The number of chapters in this audiobook."
   total_chapters: Int!
-  JSON: JSON @resolveRoot
+  JSON: JSON @resolveRoot(subgraph: "test")
 }
 
 "A Chapter"
@@ -1415,8 +1415,8 @@ type PlaylistOwnerObject {
   display_name: String
 }
 
-enum user_const @typescript(type: "\\"user\\"") @example(value: "\\"user\\"") {
-  user @enum(value: "\\"user\\"")
+enum user_const @typescript(subgraph: "test", type: "\\"user\\"") @example(subgraph: "test", value: "\\"user\\"") {
+  user @enum(subgraph: "test", value: "\\"user\\"")
 }
 
 type PlaylistTracksRefObject {
@@ -1453,8 +1453,8 @@ enum queryInput_search_type_items {
   audiobook
 }
 
-enum Include_External @typescript(type: "\\"audio\\"") @example(value: "\\"audio\\"") {
-  audio @enum(value: "\\"audio\\"")
+enum Include_External @typescript(subgraph: "test", type: "\\"audio\\"") @example(subgraph: "test", value: "\\"audio\\"") {
+  audio @enum(subgraph: "test", value: "\\"audio\\"")
 }
 
 "A user"
@@ -1559,7 +1559,7 @@ type PlaylistUserObject {
 }
 
 "Information about the track or episode."
-union query_get_playlist_tracks_allOf_1_items_items_track @discriminator(field: "type") = TrackObject | EpisodeObject
+union query_get_playlist_tracks_allOf_1_items_items_track @discriminator(subgraph: "test", field: "type") = TrackObject | EpisodeObject
 
 "Pages of albums"
 type PagingSavedAlbumObject {
@@ -1671,7 +1671,7 @@ type PagingArtistOrTrackObject_response {
   items: [query_get_users_top_artists_and_tracks_allOf_1_items_items]
 }
 
-union query_get_users_top_artists_and_tracks_allOf_1_items_items @discriminator(field: "type") = ArtistObject | TrackObject
+union query_get_users_top_artists_and_tracks_allOf_1_items_items @discriminator(subgraph: "test", field: "type") = ArtistObject | TrackObject
 
 "The type of entity to return. Valid values: \`artists\` or \`tracks\`"
 enum Type {
@@ -1765,8 +1765,8 @@ type CursorObject {
   before: String
 }
 
-enum Item_Type @typescript(type: "\\"artist\\"") @example(value: "\\"artist\\"") {
-  artist @enum(value: "\\"artist\\"")
+enum Item_Type @typescript(subgraph: "test", type: "\\"artist\\"") @example(subgraph: "test", value: "\\"artist\\"") {
+  artist @enum(subgraph: "test", value: "\\"artist\\"")
 }
 
 "The ID type: either \`artist\` or \`user\`."
@@ -1822,8 +1822,8 @@ type AudioFeaturesObject {
 "Integers that will have a value greater than 0."
 scalar PositiveInt
 
-enum audio_features_const @typescript(type: "\\"audio_features\\"") @example(value: "\\"audio_features\\"") {
-  audio_features @enum(value: "\\"audio_features\\"")
+enum audio_features_const @typescript(subgraph: "test", type: "\\"audio_features\\"") @example(subgraph: "test", value: "\\"audio_features\\"") {
+  audio_features @enum(subgraph: "test", value: "\\"audio_features\\"")
 }
 
 "Audio analysis for one track"
@@ -1954,9 +1954,9 @@ type SectionObject {
 
 "Indicates the modality (major or minor) of a section, the type of scale from which its melodic content is derived. This field will contain a 0 for \\"minor\\", a 1 for \\"major\\", or a -1 for no result. Note that the major key (e.g. C major) could more likely be confused with the minor key at 3 semitones lower (e.g. A minor) as both keys carry the same pitches."
 enum query_get_audio_analysis_sections_items_mode {
-  NEGATIVE_1 @enum(value: "-1")
-  _0 @enum(value: "0")
-  _1 @enum(value: "1")
+  NEGATIVE_1 @enum(subgraph: "test", value: "-1")
+  _0 @enum(subgraph: "test", value: "0")
+  _1 @enum(subgraph: "test", value: "1")
 }
 
 type SegmentObject {
@@ -2008,7 +2008,7 @@ type ManyGenres_response {
   genres: [String]!
 }
 
-union get_information_about_the_users_current_playback_response @statusCodeTypeName(statusCode: 200, typeName: "CurrentlyPlayingContextObject") @statusCodeTypeName(statusCode: 204, typeName: "Void_container") = CurrentlyPlayingContextObject | Void_container
+union get_information_about_the_users_current_playback_response @statusCodeTypeName(subgraph: "test", statusCode: 200, typeName: "CurrentlyPlayingContextObject") @statusCodeTypeName(subgraph: "test", statusCode: 204, typeName: "Void_container") = CurrentlyPlayingContextObject | Void_container
 
 "Information about playback"
 type CurrentlyPlayingContextObject {
@@ -2058,7 +2058,7 @@ type ContextObject {
 }
 
 "The currently playing track or episode. Can be \`null\`."
-union query_get_information_about_the_users_current_playback_oneOf_0_item @discriminator(field: "type") = TrackObject | EpisodeObject
+union query_get_information_about_the_users_current_playback_oneOf_0_item @discriminator(subgraph: "test", field: "type") = TrackObject | EpisodeObject
 
 type DisallowsObject {
   "Interrupting playback. Optional field."
@@ -2084,7 +2084,7 @@ type DisallowsObject {
 }
 
 type Void_container {
-  Void: Void @resolveRoot
+  Void: Void @resolveRoot(subgraph: "test")
 }
 
 "Represents empty values"
@@ -2124,9 +2124,9 @@ type QueueObject {
 }
 
 "The currently playing track or episode. Can be \`null\`."
-union query_get_queue_currently_playing @discriminator(field: "type") = TrackObject | EpisodeObject
+union query_get_queue_currently_playing @discriminator(subgraph: "test", field: "type") = TrackObject | EpisodeObject
 
-union query_get_queue_queue_items @discriminator(field: "type") = TrackObject | EpisodeObject
+union query_get_queue_queue_items @discriminator(subgraph: "test", field: "type") = TrackObject | EpisodeObject
 
 type get_available_markets_200_response {
   markets: [String]
@@ -2137,18 +2137,18 @@ type Mutation {
   save_audiobooks_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=18yVqkdbdRvS24c0Ilj2ci,1HGw3J3NxZO1TP1BTtVhpZ\`. Maximum: 50 IDs."
     ids: String!
-  ): JSON @httpOperation(path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Remove one or more audiobooks from the Spotify user's library.\\n"
   remove_audiobooks_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=18yVqkdbdRvS24c0Ilj2ci,1HGw3J3NxZO1TP1BTtVhpZ\`. Maximum: 50 IDs."
     ids: String!
-  ): JSON @httpOperation(path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/audiobooks", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Change a playlist's name and public/private state. (The user must, of\\ncourse, own the playlist.)\\n"
   change_playlist_details(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
     input: change_playlist_details_request_Input
-  ): JSON @httpOperation(path: "/playlists/{args.playlist_id}", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
+  ): JSON @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
   "Add one or more items to a user's playlist.\\n"
   add_tracks_to_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
@@ -2158,7 +2158,7 @@ type Mutation {
     "A comma-separated list of [Spotify URIs](/documentation/web-api/concepts/spotify-uris-ids) to add, can be track or episode URIs. For example:<br/>\`uris=spotify:track:4iV5W9uYEdYUVa79Axb7Rh, spotify:track:1301WleyT98MSxVHPZCA6M, spotify:episode:512ojhOuo1ktJprKbVcKyQ\`<br/>A maximum of 100 items can be added in one request. <br/>\\n_**Note**: it is likely that passing a large number of item URIs as a query parameter will exceed the maximum length of the request URI. When adding a large number of items, it is recommended to pass them in the request body, see below._"
     uris: URL
     input: add_tracks_to_playlist_request_Input
-  ): PlaylistSnapshotId_response @httpOperation(path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"position\\":\\"position\\",\\"uris\\":\\"uris\\"}")
+  ): PlaylistSnapshotId_response @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"position\\":\\"position\\",\\"uris\\":\\"uris\\"}")
   "Either reorder or replace items in a playlist depending on the request's parameters.\\nTo reorder items, include \`range_start\`, \`insert_before\`, \`range_length\` and \`snapshot_id\` in the request's body.\\nTo replace items, include \`uris\` as either a query parameter or in the request's body.\\nReplacing items in a playlist will overwrite its existing items. This operation can be used for replacing or clearing items in a playlist.\\n<br/>\\n**Note**: Replace and reorder are mutually exclusive operations which share the same endpoint, but have different parameters.\\nThese operations can't be applied together in a single request.\\n"
   reorder_or_replace_playlists_tracks(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
@@ -2166,155 +2166,155 @@ type Mutation {
     "A comma-separated list of [Spotify URIs](/documentation/web-api/concepts/spotify-uris-ids) to set, can be track or episode URIs. For example: \`uris=spotify:track:4iV5W9uYEdYUVa79Axb7Rh,spotify:track:1301WleyT98MSxVHPZCA6M,spotify:episode:512ojhOuo1ktJprKbVcKyQ\`<br/>A maximum of 100 items can be set in one request."
     uris: String
     input: reorder_or_replace_playlists_tracks_request_Input
-  ): PlaylistSnapshotId_response @httpOperation(path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"uris\\":\\"uris\\"}")
+  ): PlaylistSnapshotId_response @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"uris\\":\\"uris\\"}")
   "Remove one or more items from a user's playlist.\\n"
   remove_tracks_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
     input: remove_tracks_playlist_request_Input
-  ): PlaylistSnapshotId_response @httpOperation(path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE)
+  ): PlaylistSnapshotId_response @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE)
   "Save one or more albums to the current user's 'Your Music' library.\\n"
   save_albums_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the albums. Maximum: 20 IDs."
     ids: String!
     input: save_albums_user_request_Input
-  ): JSON @httpOperation(path: "/me/albums", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/albums", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Remove one or more albums from the current user's 'Your Music' library.\\n"
   remove_albums_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the albums. Maximum: 20 IDs."
     ids: String!
     input: remove_albums_user_request_Input
-  ): JSON @httpOperation(path: "/me/albums", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/albums", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Save one or more tracks to the current user's 'Your Music' library.\\n"
   save_tracks_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=4iV5W9uYEdYUVa79Axb7Rh,1301WleyT98MSxVHPZCA6M\`. Maximum: 50 IDs."
     ids: String!
     input: save_tracks_user_request_Input
-  ): JSON @httpOperation(path: "/me/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Remove one or more tracks from the current user's 'Your Music' library.\\n"
   remove_tracks_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=4iV5W9uYEdYUVa79Axb7Rh,1301WleyT98MSxVHPZCA6M\`. Maximum: 50 IDs."
     ids: String!
     input: remove_tracks_user_request_Input
-  ): JSON @httpOperation(path: "/me/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/tracks", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Save one or more episodes to the current user's library.<br/>\\nThis API endpoint is in __beta__ and could change without warning. Please share any feedback that you have, or issues that you discover, in our [developer community forum](https://community.spotify.com/t5/Spotify-for-Developers/bd-p/Spotify_Developer).\\n"
   save_episodes_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). Maximum: 50 IDs."
     ids: String!
     input: save_episodes_user_request_Input
-  ): JSON @httpOperation(path: "/me/episodes", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/episodes", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Remove one or more episodes from the current user's library.<br/>\\nThis API endpoint is in __beta__ and could change without warning. Please share any feedback that you have, or issues that you discover, in our [developer community forum](https://community.spotify.com/t5/Spotify-for-Developers/bd-p/Spotify_Developer).\\n"
   remove_episodes_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=4iV5W9uYEdYUVa79Axb7Rh,1301WleyT98MSxVHPZCA6M\`. Maximum: 50 IDs."
     ids: String!
     input: remove_episodes_user_request_Input
-  ): JSON @httpOperation(path: "/me/episodes", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/episodes", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Save one or more shows to current Spotify user's library.\\n"
   save_shows_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the shows. Maximum: 50 IDs."
     ids: String!
-  ): JSON @httpOperation(path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"ids\\":\\"ids\\"}")
   "Delete one or more shows from current Spotify user's library.\\n"
   remove_shows_user(
     "A comma-separated list of the [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids) for the shows. Maximum: 50 IDs."
     ids: String!
     "An [ISO 3166-1 alpha-2 country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).\\n  If a country code is specified, only content that is available in that market will be returned.<br/>\\n  If a valid user access token is specified in the request header, the country associated with\\n  the user account will take priority over this parameter.<br/>\\n  _**Note**: If neither market or user country are provided, the content is considered unavailable for the client._<br/>\\n  Users can view the country that is associated with their account in the [account settings](https://www.spotify.com/se/account/overview/)."
     market: String
-  ): JSON @httpOperation(path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/shows", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"ids\\":\\"ids\\",\\"market\\":\\"market\\"}")
   "Create a playlist for a Spotify user. (The playlist will be empty until\\nyou [add tracks](/documentation/web-api/reference/add-tracks-to-playlist).)\\n"
   create_playlist(
     "The user's [Spotify user ID](/documentation/web-api/concepts/spotify-uris-ids)."
     user_id: String!
     input: create_playlist_request_Input
-  ): PlaylistObject @httpOperation(path: "/users/{args.user_id}/playlists", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: POST)
+  ): PlaylistObject @httpOperation(subgraph: "test", path: "/users/{args.user_id}/playlists", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: POST)
   "Add the current user as a follower of a playlist.\\n"
   follow_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
     input: follow_playlist_request_Input
-  ): JSON @httpOperation(path: "/playlists/{args.playlist_id}/followers", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
+  ): JSON @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/followers", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
   "Remove the current user as a follower of a playlist.\\n"
   unfollow_playlist(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
-  ): JSON @httpOperation(path: "/playlists/{args.playlist_id}/followers", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE)
+  ): JSON @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/followers", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: DELETE)
   "Replace the image used to represent a specific playlist.\\n"
   upload_custom_playlist_cover(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the playlist."
     playlist_id: String!
-  ): JSON @httpOperation(path: "/playlists/{args.playlist_id}/images", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
+  ): JSON @httpOperation(subgraph: "test", path: "/playlists/{args.playlist_id}/images", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
   "Add the current user as a follower of one or more artists or other Spotify users.\\n"
   follow_artists_users(
     type: mutationInput_follow_artists_users_type!
     "A comma-separated list of the artist or the user [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids).\\nA maximum of 50 IDs can be sent in one request."
     ids: String!
     input: follow_artists_users_request_Input
-  ): Void @httpOperation(path: "/me/following", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/following", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
   "Remove the current user as a follower of one or more artists or other Spotify users.\\n"
   unfollow_artists_users(
     type: mutationInput_unfollow_artists_users_type!
     "A comma-separated list of the artist or the user [Spotify IDs](/documentation/web-api/concepts/spotify-uris-ids). For example: \`ids=74ASZWbe4lXaubB36ztrGX,08td7MxkoHQkXnWAYD8d6Q\`. A maximum of 50 IDs can be sent in one request."
     ids: String!
     input: unfollow_artists_users_request_Input
-  ): JSON @httpOperation(path: "/me/following", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
+  ): JSON @httpOperation(subgraph: "test", path: "/me/following", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: DELETE, queryParamArgMap: "{\\"type\\":\\"type\\",\\"ids\\":\\"ids\\"}")
   "Transfer playback to a new device and determine if it should start playing.\\n"
-  transfer_a_users_playback(input: transfer_a_users_playback_request_Input): Void @httpOperation(path: "/me/player", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
+  transfer_a_users_playback(input: transfer_a_users_playback_request_Input): Void @httpOperation(subgraph: "test", path: "/me/player", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT)
   "Start a new context or resume current playback on the user's active device.\\n"
   start_a_users_playback(
     "The id of the device this command is targeting. If not supplied, the user's currently active device is the target."
     device_id: String
     input: start_a_users_playback_request_Input
-  ): Void @httpOperation(path: "/me/player/play", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/play", operationSpecificHeaders: "{\\"Content-Type\\":\\"application/json\\",\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
   "Pause playback on the user's account.\\n"
   pause_a_users_playback(
     "The id of the device this command is targeting. If not supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/pause", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/pause", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
   "Skips to next track in the user’s queue.\\n"
   skip_users_playback_to_next_track(
     "The id of the device this command is targeting. If not supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/next", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/next", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
   "Skips to previous track in the user’s queue.\\n"
   skip_users_playback_to_previous_track(
     "The id of the device this command is targeting. If\\nnot supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/previous", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/previous", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"device_id\\":\\"device_id\\"}")
   "Seeks to the given position in the user’s currently playing track.\\n"
   seek_to_position_in_currently_playing_track(
     "The position in milliseconds to seek to. Must be a\\npositive number. Passing in a position that is greater than the length of\\nthe track will cause the player to start playing the next song."
     position_ms: Int!
     "The id of the device this command is targeting. If\\nnot supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/seek", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"position_ms\\":\\"position_ms\\",\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/seek", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"position_ms\\":\\"position_ms\\",\\"device_id\\":\\"device_id\\"}")
   "Set the repeat mode for the user's playback. Options are repeat-track,\\nrepeat-context, and off.\\n"
   set_repeat_mode_on_users_playback(
     "**track**, **context** or **off**.<br/>\\n**track** will repeat the current track.<br/>\\n**context** will repeat the current context.<br/>\\n**off** will turn repeat off."
     state: String!
     "The id of the device this command is targeting. If\\nnot supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/repeat", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"state\\":\\"state\\",\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/repeat", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"state\\":\\"state\\",\\"device_id\\":\\"device_id\\"}")
   "Set the volume for the user’s current playback device.\\n"
   set_volume_for_users_playback(
     "The volume to set. Must be a value from 0 to 100 inclusive."
     volume_percent: Int!
     "The id of the device this command is targeting. If not supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/volume", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"volume_percent\\":\\"volume_percent\\",\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/volume", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"volume_percent\\":\\"volume_percent\\",\\"device_id\\":\\"device_id\\"}")
   "Toggle shuffle on or off for user’s playback.\\n"
   toggle_shuffle_for_users_playback(
     "**true** : Shuffle user's playback.<br/>\\n**false** : Do not shuffle user's playback."
     state: Boolean!
     "The id of the device this command is targeting. If\\nnot supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/shuffle", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"state\\":\\"state\\",\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/shuffle", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: PUT, queryParamArgMap: "{\\"state\\":\\"state\\",\\"device_id\\":\\"device_id\\"}")
   "Add an item to the end of the user's current playback queue.\\n"
   add_to_queue(
     "The uri of the item to add to the queue. Must be a track or an episode uri."
     uri: URL!
     "The id of the device this command is targeting. If\\nnot supplied, the user's currently active device is the target."
     device_id: String
-  ): Void @httpOperation(path: "/me/player/queue", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"uri\\":\\"uri\\",\\"device_id\\":\\"device_id\\"}")
+  ): Void @httpOperation(subgraph: "test", path: "/me/player/queue", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: POST, queryParamArgMap: "{\\"uri\\":\\"uri\\",\\"device_id\\":\\"device_id\\"}")
 }
 
 input change_playlist_details_request_Input {

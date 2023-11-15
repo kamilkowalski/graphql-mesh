@@ -5,15 +5,15 @@ exports[`OpenAPI loader: Naming convention should generate the schema correctly 
   query: Query
 }
 
-directive @globalOptions(sourceName: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
-directive @httpOperation(path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
+directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(sourceName: "test", endpoint: "http://localhost:{context.port}/api") {
+type Query @globalOptions(subgraph: "test", endpoint: "http://localhost:{context.port}/api") {
   "Return a user."
-  user: user @httpOperation(path: "/user", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  user: user @httpOperation(subgraph: "test", path: "/user", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "Return a user."
-  User: user @httpOperation(path: "/user2", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
+  User: user @httpOperation(subgraph: "test", path: "/user2", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 
 "A user represents a natural person"
