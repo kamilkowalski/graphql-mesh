@@ -16,9 +16,11 @@ directive @typescript(subgraph: String, type: String) on SCALAR | ENUM
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "basket") {
+type Query @globalOptions(subgraph: "basket") @handler(subgraph: "basket", name: "openapi") {
   customers_by_customerId(
     "Authentication Token"
     x_auth_token: String!

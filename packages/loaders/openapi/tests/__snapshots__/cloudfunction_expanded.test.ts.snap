@@ -8,9 +8,11 @@ exports[`Cloudfunction should generate correct schema: cloudfunction-schema 1`] 
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "test", endpoint: "https://openwhisk.ng.bluemix.net/api/v1/namespaces/_/actions", operationHeaders: "{\\"Authorization\\":\\"Basic {args.usernamePassword|base64}\\"}") {
+type Query @globalOptions(subgraph: "test", endpoint: "https://openwhisk.ng.bluemix.net/api/v1/namespaces/_/actions", operationHeaders: "{\\"Authorization\\":\\"Basic {args.usernamePassword|base64}\\"}") @handler(subgraph: "test", name: "openapi") {
   dummy: String
 }
 

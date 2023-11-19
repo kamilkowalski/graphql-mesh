@@ -11,6 +11,7 @@ export async function getGraphQLSchemaFromDereferencedJSONSchema(
   subgraphName: string,
   opts: Omit<AddExecutionLogicToComposerOptions, 'schemaComposer'> & {
     fullyDeferencedSchema: JSONSchemaObject;
+    handlerName: string;
   },
 ) {
   const {
@@ -21,6 +22,7 @@ export async function getGraphQLSchemaFromDereferencedJSONSchema(
     endpoint,
     queryParams,
     queryStringOptions,
+    handlerName = 'json-schema',
   } = opts;
   logger.debug(`Generating GraphQL Schema from the bundled JSON Schema`);
   const visitorResult = await getComposerFromJSONSchema({
@@ -49,6 +51,7 @@ export async function getGraphQLSchemaFromDereferencedJSONSchema(
     endpoint,
     queryParams,
     queryStringOptions,
+    handlerName,
   });
 
   if (schemaComposerWithExecutionLogic.Query.getFieldNames().length === 0) {

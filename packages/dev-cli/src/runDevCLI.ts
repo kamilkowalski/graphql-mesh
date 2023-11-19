@@ -4,12 +4,23 @@ import { join } from 'path';
 import { GraphQLSchema } from 'graphql';
 import Spinnies from 'spinnies';
 import { composeSubgraphs, SubgraphConfig } from '@graphql-mesh/fusion-composition';
+import { loadFiles } from '@graphql-tools/load-files';
 import { printSchemaWithDirectives } from '@graphql-tools/utils';
 import { MeshDevCLIConfig } from './types';
 
-export const spinnies = new Spinnies();
+export const spinnies = new Spinnies({
+  color: 'white',
+  succeedColor: 'white',
+  failColor: 'red',
+  succeedPrefix: '✔',
+  failPrefix: '💥',
+  spinner: { interval: 80, frames: ['/', '|', '\\', '--'] },
+});
 
-export async function runDevCLI() {
+export async function runDevCLI(
+  processExit = (exitCode: number) => process.exit(exitCode),
+): Promise<void | never> {
+  spinnies.add('main', { text: 'Starting Mesh Dev CLI' });
   const meshDevCLIConfigFileName = process.env.MESH_DEV_CONFIG_FILE_NAME || 'mesh.dev.config.ts';
   const meshDevCLIConfigFilePath =
     process.env.MESH_DEV_CONFIG_FILE_PATH || join(process.cwd(), meshDevCLIConfigFileName);
@@ -19,34 +30,41 @@ export async function runDevCLI() {
     spinnies.fail('config', {
       text: `Mesh Dev CLI Config was not found in ${meshDevCLIConfigFilePath}`,
     });
-    process.exit(1);
+    return processExit(1);
   }
   spinnies.succeed('config', {
     text: `Loaded Mesh Dev CLI Config from ${meshDevCLIConfigFilePath}`,
   });
   const meshDevCLIConfig = loadedConfig.config;
   const subgraphConfigsForComposition: SubgraphConfig[] = await Promise.all(
-    meshDevCLIConfig.subgraphs.map(async subgraphConfig => {
-      spinnies.add(subgraphConfig.name, { text: `Loading subgraph ${subgraphConfig.name}` });
+    meshDevCLIConfig.subgraphs.map(async subgraphCLIConfig => {
+      const { name: subgraphName, schema$ } = subgraphCLIConfig.sourceHandler;
+      spinnies.add(subgraphName, { text: `Loading subgraph` });
       let subgraphSchema: GraphQLSchema;
       try {
-        subgraphSchema = await subgraphConfig.handler;
+        subgraphSchema = await schema$;
       } catch (e) {
-        spinnies.fail(subgraphConfig.name, {
-          text: `Failed to load subgraph ${subgraphConfig.name} - ${e.stack}`,
+        spinnies.fail(subgraphName, {
+          text: `Failed to load subgraph ${subgraphName} - ${e.stack}`,
         });
-        process.exit(1);
+        return processExit(1);
       }
-      spinnies.succeed(subgraphConfig.name, { text: `Loaded subgraph ${subgraphConfig.name}` });
+      spinnies.succeed(subgraphName, { text: `Loaded subgraph ${subgraphName}` });
       return {
-        name: subgraphConfig.name,
+        name: subgraphName,
         schema: subgraphSchema,
-        transforms: subgraphConfig.transforms,
+        transforms: subgraphCLIConfig.transforms,
       };
     }),
   );
   spinnies.add('composition', { text: `Composing supergraph` });
-  let composedSchema = composeSubgraphs(subgraphConfigsForComposition);
+  let typeDefs: string[] | undefined;
+  if (meshDevCLIConfig.typeDefs?.length) {
+    typeDefs = await loadFiles(meshDevCLIConfig.typeDefs);
+  }
+  let composedSchema = composeSubgraphs(subgraphConfigsForComposition, {
+    typeDefs,
+  });
   if (meshDevCLIConfig.transforms?.length) {
     spinnies.add('transforms', { text: `Applying transforms` });
     for (const transform of meshDevCLIConfig.transforms) {
@@ -63,5 +81,6 @@ export async function runDevCLI() {
   const supergraphPath =
     process.env.MESH_SUPERGRAPH_PATH || join(process.cwd(), supergraphFileName);
   await fsPromises.writeFile(supergraphPath, printedSupergraph, 'utf8');
-  spinnies.succeed('write', { text: `Wrote supergraph to ${supergraphPath}` });
+  spinnies.succeed('write', { text: `Written supergraph to ${supergraphPath}` });
+  spinnies.succeed('main', { text: 'Finished Mesh Dev CLI' });
 }

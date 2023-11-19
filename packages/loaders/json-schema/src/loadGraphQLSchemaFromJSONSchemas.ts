@@ -31,6 +31,7 @@ export async function loadNonExecutableGraphQLSchemaFromJSONSchemas(
     queryParams: options.queryParams,
     queryStringOptions: options.queryStringOptions,
     getScalarForFormat: options.getScalarForFormat,
+    handlerName: options.handlerName,
   });
 }
 
@@ -39,10 +40,9 @@ export async function loadGraphQLSchemaFromJSONSchemas(
   options: JSONSchemaLoaderOptions,
 ) {
   const graphqlSchema = await loadNonExecutableGraphQLSchemaFromJSONSchemas(name, options);
-  return processDirectives({
+  return processDirectives(graphqlSchema, {
     ...options,
     operationHeaders: typeof options.operationHeaders === 'object' ? options.operationHeaders : {},
-    schema: graphqlSchema,
     globalFetch: options.fetch || fetch,
     pubsub: options.pubsub,
     logger: options.logger,

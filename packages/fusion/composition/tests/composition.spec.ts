@@ -79,4 +79,31 @@ describe('Composition', () => {
 
     expect(printSchemaWithDirectives(composedSchema)).toMatchSnapshot();
   });
+  it('keeps the directives', () => {
+    const composedSchema = composeSubgraphs([
+      {
+        name: 'A',
+        schema: aSchema,
+      },
+      {
+        name: 'B',
+        schema: bSchema,
+      },
+      {
+        name: 'C',
+        schema: buildSchema(/* GraphQL */ `
+          directive @foo on FIELD_DEFINITION
+          type Query {
+            cFoo: Foo! @foo
+          }
+
+          type Foo {
+            id: ID!
+          }
+        `),
+      },
+    ]);
+
+    expect(printSchemaWithDirectives(composedSchema)).toMatchSnapshot();
+  });
 });

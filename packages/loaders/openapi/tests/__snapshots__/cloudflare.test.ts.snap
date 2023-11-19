@@ -26,9 +26,11 @@ directive @regexp(subgraph: String, pattern: String) on SCALAR
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "cloudflare", endpoint: "https://api.cloudflare.com/client/v4") {
+type Query @globalOptions(subgraph: "cloudflare", endpoint: "https://api.cloudflare.com/client/v4") @handler(subgraph: "cloudflare", name: "openapi") {
   "List all accounts you have ownership or verified access to."
   accounts_list_accounts: accounts_list_accounts_response @httpOperation(subgraph: "cloudflare", path: "/accounts", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
   "List all address maps owned by the account."

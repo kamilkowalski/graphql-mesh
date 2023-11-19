@@ -579,24 +579,20 @@ export function processFlattenAnnotations(field: GraphQLField<any, any>) {
   }
 }
 
-interface ProcessDirectiveArgs {
-  schema: GraphQLSchema;
-  pubsub: MeshPubSub;
-  logger: Logger;
-  globalFetch: MeshFetch;
+export interface ProcessDirectiveArgs {
+  pubsub?: MeshPubSub;
+  logger?: Logger;
+  globalFetch?: MeshFetch;
   endpoint?: string;
   timeout?: number;
   operationHeaders?: Record<string, string>;
   queryParams?: Record<string, any>;
 }
 
-export function processDirectives({
-  schema,
-  globalFetch,
-  logger,
-  pubsub,
-  ...extraGlobalOptions
-}: ProcessDirectiveArgs) {
+export function processDirectives(
+  schema: GraphQLSchema,
+  { globalFetch, logger, pubsub, ...extraGlobalOptions }: ProcessDirectiveArgs = {},
+) {
   const nonExecutableObjMapScalar = schema.getType('ObjMap');
   if (nonExecutableObjMapScalar && isScalarType(nonExecutableObjMapScalar)) {
     addExecutionLogicToScalar(nonExecutableObjMapScalar, ObjMapScalar);
@@ -803,4 +799,20 @@ export const ExampleDirective = new GraphQLDirective({
     },
   },
   isRepeatable: true,
+});
+
+export const handlerDirective = new GraphQLDirective({
+  name: 'handler',
+  args: {
+    subgraph: {
+      type: GraphQLString,
+    },
+    name: {
+      type: GraphQLString,
+    },
+    options: {
+      type: ObjMapScalar,
+    },
+  },
+  locations: [DirectiveLocation.OBJECT],
 });

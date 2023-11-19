@@ -3,5 +3,5 @@
   "compilerOptions": {
     "module": "commonjs"
   },
-  "files": ["mesh.dev.config.ts"]
+  "files": ["mesh.dev.config.ts", "mesh.serve.config.ts"]
 }

@@ -9,9 +9,11 @@ directive @dictionary(subgraph: String) on FIELD_DEFINITION
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "additionalPropertiesTest", endpoint: "http://localhost:3000") {
+type Query @globalOptions(subgraph: "additionalPropertiesTest", endpoint: "http://localhost:3000") @handler(subgraph: "additionalPropertiesTest", name: "openapi") {
   test: test_200_response @httpOperation(subgraph: "additionalPropertiesTest", path: "/test", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 

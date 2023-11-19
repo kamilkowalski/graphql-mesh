@@ -1,9 +1,15 @@
 /* eslint-disable no-inner-declarations */
-import { Kind, visit } from 'graphql';
+import { DocumentNode, Kind, visit } from 'graphql';
 import _ from 'lodash';
 import { createGraphQLError, Executor, isAsyncIterable, isPromise } from '@graphql-tools/utils';
 import { ResolverOperationNode } from './query-planning.js';
 import { visitResolutionPath } from './visitResolutionPath.js';
+
+export type OnExecuteFn = (
+  subgraphName: string,
+  document: DocumentNode,
+  variables: Record<string, any>,
+) => ReturnType<Executor>;
 
 export interface ExecutableResolverOperationNode extends ResolverOperationNode {
   providedVariablePathMap: Map<string, string[]>;
@@ -159,7 +165,7 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
   resolverOperationNodes: ExecutableResolverOperationNode[],
   fieldDependencyMap: Map<string, ExecutableResolverOperationNode[]>,
   inputVariableMap: Map<string, any>,
-  executorMap: Map<string, Executor>,
+  onExecute: OnExecuteFn,
   obj: any = {},
 ) {
   const dependencyPromises: PromiseLike<any>[] = [];
@@ -167,7 +173,7 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
   const outputVariableMap = new Map();
 
   for (const depOp of resolverOperationNodes) {
-    const depOpResult$ = executeResolverOperationNode(depOp, inputVariableMap, executorMap);
+    const depOpResult$ = executeResolverOperationNode(depOp, inputVariableMap, onExecute);
     function handleDepOpResult(depOpResult: {
       exported: any;
       outputVariableMap: Map<string, any>;
@@ -192,7 +198,7 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
       const fieldOpResult$ = executeResolverOperationNode(
         fieldOperationNode,
         inputVariableMap,
-        executorMap,
+        onExecute,
       );
       function handleFieldOpResult(fieldOpResult: { exported: any; listed?: boolean }) {
         if (fieldOpResult.listed) {
@@ -262,13 +268,8 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
 export function executeResolverOperationNode(
   resolverOperationNode: ExecutableResolverOperationNode,
   inputVariableMap: Map<string, any>,
-  executorMap: Map<string, Executor>,
+  onExecute: OnExecuteFn,
 ) {
-  const executor = executorMap.get(resolverOperationNode.subgraph);
-  if (!executor) {
-    throw new Error(`Executor not found for subgraph ${resolverOperationNode.subgraph}`);
-  }
-
   const variablesForOperation: Record<string, any> = {};
 
   for (const requiredVarName of resolverOperationNode.requiredVariableNames) {
@@ -285,7 +286,7 @@ export function executeResolverOperationNode(
         const itemResult$ = executeResolverOperationNode(
           resolverOperationNode,
           itemInputVariableMap,
-          executorMap,
+          onExecute,
         );
         if (isPromise(itemResult$)) {
           promises.push(
@@ -322,13 +323,16 @@ export function executeResolverOperationNode(
       }
       return handleResults();
     }
-    variablesForOperation[requiredVarName] = varValue;
+    if (varValue != null) {
+      variablesForOperation[requiredVarName] = varValue;
+    }
   }
 
-  const result$ = executor({
-    document: resolverOperationNode.resolverOperationDocument,
-    variables: variablesForOperation,
-  });
+  const result$ = onExecute(
+    resolverOperationNode.subgraph,
+    resolverOperationNode.resolverOperationDocument,
+    variablesForOperation,
+  );
 
   if (isAsyncIterable(result$)) {
     throw new Error(`Async iterable not supported`);
@@ -355,7 +359,7 @@ export function executeResolverOperationNode(
         resolverOperationNode.batchedResolverDependencies,
         resolverOperationNode.batchedResolverDependencyFieldMap,
         outputVariableMap,
-        executorMap,
+        onExecute,
         exportedList,
       );
     }
@@ -371,7 +375,7 @@ export function executeResolverOperationNode(
         resolverOperationNode.resolverDependencies,
         resolverOperationNode.resolverDependencyFieldMap,
         outputVariableMap,
-        executorMap,
+        onExecute,
         exportedItem,
       );
     }

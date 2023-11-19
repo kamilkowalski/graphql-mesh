@@ -1,8 +1,9 @@
-import { buildSchema, getOperationAST, GraphQLObjectType, Kind } from 'graphql';
+import { buildSchema, DocumentNode, getOperationAST, GraphQLObjectType, Kind } from 'graphql';
 import { createDefaultExecutor } from '@graphql-tools/delegate';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import { ExecutionRequest } from '@graphql-tools/utils';
 import { FlattenedFieldNode, FlattenedSelectionSet } from '../src/flattenSelections.js';
-import { executeOperation } from '../src/operations.js';
+import { executeOperation, planOperation } from '../src/operations.js';
 import { parseAndCache, printCached } from '../src/parseAndPrintWithCache.js';
 import { createResolveNode, visitFieldNodeForTypeResolvers } from '../src/query-planning.js';
 import { serializeResolverOperationNode } from '../src/serialization.js';
@@ -48,6 +49,7 @@ describe('Query Planning', () => {
           },
         ],
         selections[0].selectionSet?.selections as FlattenedFieldNode[],
+        selections[0].arguments,
         { currentVariableIndex: 0 },
       );
 
@@ -107,6 +109,7 @@ query FooFromB($__variable_0: ID!) {
           },
         ],
         extraFieldSelection.selectionSet!.selections as FlattenedFieldNode[],
+        extraFieldSelection.arguments,
         { currentVariableIndex: 0 },
       );
 
@@ -406,6 +409,57 @@ query MyFooFromA {
         ],
       });
     });
+
+    it('respects arguments', () => {
+      const operationInText = /* GraphQL */ `
+        query Test {
+          foo(id: 1) {
+            bar
+          }
+        }
+      `;
+
+      const supergraphInText = /* GraphQL */ `
+        type Query {
+          foo(id: ID!): Foo!
+            @resolver(operation: "query FooFromA($id: ID!) { foo(id: $id) }", subgraph: "A")
+        }
+
+        type Foo @source(subgraph: "A") {
+          bar: String! @source(subgraph: "A")
+        }
+      `;
+
+      const supergraph = buildSchema(supergraphInText, {
+        assumeValid: true,
+        assumeValidSDL: true,
+      });
+
+      const operationDoc = parseAndCache(operationInText);
+
+      const plan = planOperation(supergraph, operationDoc, 'Test');
+
+      expect(
+        Object.fromEntries(
+          [...plan.resolverDependencyFieldMap.entries()].map(([key, value]) => [
+            key,
+            value.map(serializeResolverOperationNode),
+          ]),
+        ),
+      ).toMatchObject({
+        foo: [
+          {
+            subgraph: 'A',
+            resolverOperationDocument:
+              'query FooFromA($__variable_0: ID! = 1) {\n' +
+              '  __export: foo(id: $__variable_0) {\n' +
+              '    bar\n' +
+              '  }\n' +
+              '}',
+          },
+        ],
+      });
+    });
   });
 });
 
@@ -546,6 +600,8 @@ describe('Execution', () => {
     type Query {
       myFoo: Foo! @resolver(operation: "query MyFooFromA { myFoo }", subgraph: "A")
       foos: [Foo!]! @resolver(operation: "query FoosFromA { foos }", subgraph: "A")
+      foo(id: ID!): Foo!
+        @resolver(operation: "query FooFromB($id: ID!) { foo(id: $id) }", subgraph: "B")
     }
   `;
 
@@ -560,6 +616,17 @@ describe('Execution', () => {
   executorMap.set('B', createDefaultExecutor(bSchema));
   executorMap.set('C', createDefaultExecutor(cSchema));
   executorMap.set('D', createDefaultExecutor(dSchema));
+
+  function onExecute(subgraphName: string, document: DocumentNode, variables: Record<string, any>) {
+    const executor = executorMap.get(subgraphName);
+    if (!executor) {
+      throw new Error(`No executor found for subgraph ${subgraphName}`);
+    }
+    return executor({
+      document,
+      variables,
+    });
+  }
 
   it('works', async () => {
     const operationInText = /* GraphQL */ `
@@ -578,7 +645,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -604,7 +676,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       foos: [
@@ -638,7 +715,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       foos: [
@@ -723,7 +805,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       foos: [
@@ -746,7 +833,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -766,7 +858,12 @@ describe('Execution', () => {
 
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -789,7 +886,12 @@ describe('Execution', () => {
 
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -810,7 +912,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -830,7 +937,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -860,7 +972,12 @@ describe('Execution', () => {
     `;
     const operationDoc = parseAndCache(operationInText);
 
-    const result = await executeOperation(supergraph, executorMap, operationDoc, 'Test');
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
 
     expect(result.exported).toMatchObject({
       myFoo: {
@@ -874,6 +991,59 @@ describe('Execution', () => {
             baz: 'C_BAZ_FOR_C_CHILD_ID_FOR_C_CHILD_ID_FOR_A_FOO_ID',
           },
         },
+      },
+    });
+  });
+  it('works with embedded arguments', async () => {
+    const operationInText = /* GraphQL */ `
+      query Test {
+        foo(id: 1) {
+          id
+          baz
+        }
+      }
+    `;
+    const operationDoc = parseAndCache(operationInText);
+
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
+
+    expect(result.exported).toMatchObject({
+      foo: {
+        id: '1',
+        baz: 'C_BAZ_FOR_1',
+      },
+    });
+  });
+  it('works with variables', async () => {
+    const operationInText = /* GraphQL */ `
+      query Test($id: ID!) {
+        foo(id: $id) {
+          id
+          baz
+        }
+      }
+    `;
+    const operationDoc = parseAndCache(operationInText);
+
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+      variables: {
+        id: '1',
+      },
+    });
+
+    expect(result.exported).toMatchObject({
+      foo: {
+        id: '1',
+        baz: 'C_BAZ_FOR_1',
       },
     });
   });

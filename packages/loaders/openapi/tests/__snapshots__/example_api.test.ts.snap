@@ -14,13 +14,15 @@ directive @resolveRootField(subgraph: String, field: String) on FIELD_DEFINITION
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
 directive @linkResolver(subgraph: String, linkResolverMap: ObjMap) on FIELD_DEFINITION
 
 directive @link(defaultRootType: String, defaultField: String) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "example_api", endpoint: "http://localhost:3000/api") {
+type Query @globalOptions(subgraph: "example_api", endpoint: "http://localhost:3000/api") @handler(subgraph: "example_api", name: "openapi") {
   "Return a list of users."
   getUsers(
     "Limit of the number of users to return."

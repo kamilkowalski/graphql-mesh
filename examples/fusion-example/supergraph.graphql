@@ -1,6 +1,5 @@
 schema {
   query: Query
-  mutation: Mutation
 }
 
 directive @enum(subgraph: String, value: String) on ENUM_VALUE
@@ -13,6 +12,8 @@ directive @globalOptions(
   queryParams: ObjMap
 ) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(
   subgraph: String
   path: String
@@ -24,269 +25,487 @@ directive @httpOperation(
   queryStringOptionsByParam: ObjMap
 ) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "my-openapi", endpoint: "/api/v3") {
-  "Multiple status values can be provided with comma separated strings"
-  myOpenAPIfindPetsByStatus(status: queryInput_findPetsByStatus_status = available): [Pet]
+type Query
+  @globalOptions(subgraph: "my-openapi", endpoint: "https://api.stackexchange.com/2.2")
+  @handler(subgraph: "my-openapi", name: "openapi") {
+  "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
+  StackExchangelistQuestions(
+    fromdate: Int
+    todate: Int
+    min: Int
+    max: Int
+    tagged: String
+    order: queryInput_listQuestions_order
+    sort: queryInput_listQuestions_sort
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): QuestionsResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/questions"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"tagged\":\"tagged\",\"order\":\"order\",\"sort\":\"sort\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query findPetsByStatus($status: queryInput_findPetsByStatus_status) { findPetsByStatus(status: $status) }"
+      operation: "query listQuestions($fromdate: Int, $todate: Int, $min: Int, $max: Int, $tagged: String, $order: queryInput_listQuestions_order, $sort: queryInput_listQuestions_sort, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { listQuestions(fromdate: $fromdate, todate: $todate, min: $min, max: $max, tagged: $tagged, order: $order, sort: $sort, page: $page, pagesize: $pagesize, site: $site) }"
     )
-  "Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing."
-  myOpenAPIfindPetsByTags("Tags to filter by" tags: [String]): [Pet]
+    @source(subgraph: "my-openapi", name: "listQuestions")
+  "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
+  StackExchangelistFeaturedQuestions(
+    fromdate: Int
+    todate: Int
+    min: Int
+    max: Int
+    tagged: String
+    order: queryInput_listFeaturedQuestions_order
+    sort: queryInput_listFeaturedQuestions_sort
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): QuestionsResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/questions/featured"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"tagged\":\"tagged\",\"order\":\"order\",\"sort\":\"sort\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query findPetsByTags($tags: [String]) { findPetsByTags(tags: $tags) }"
+      operation: "query listFeaturedQuestions($fromdate: Int, $todate: Int, $min: Int, $max: Int, $tagged: String, $order: queryInput_listFeaturedQuestions_order, $sort: queryInput_listFeaturedQuestions_sort, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { listFeaturedQuestions(fromdate: $fromdate, todate: $todate, min: $min, max: $max, tagged: $tagged, order: $order, sort: $sort, page: $page, pagesize: $pagesize, site: $site) }"
     )
-  "Returns a single pet"
-  myOpenAPIgetPetById("ID of pet to return" petId: BigInt!): Pet
+    @source(subgraph: "my-openapi", name: "listFeaturedQuestions")
+  "Returns questions which have received no answers.\nCompare with /questions/unanswered which merely returns questions that the sites consider insufficiently well answered."
+  StackExchangelistQuestionsWithoutAnswers(
+    fromdate: Int
+    todate: Int
+    min: Int
+    max: Int
+    tagged: String
+    order: queryInput_listQuestionsWithoutAnswers_order
+    sort: queryInput_listQuestionsWithoutAnswers_sort
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): QuestionsResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/questions/no-answers"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"tagged\":\"tagged\",\"order\":\"order\",\"sort\":\"sort\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query getPetById($petId: BigInt!) { getPetById(petId: $petId) }"
+      operation: "query listQuestionsWithoutAnswers($fromdate: Int, $todate: Int, $min: Int, $max: Int, $tagged: String, $order: queryInput_listQuestionsWithoutAnswers_order, $sort: queryInput_listQuestionsWithoutAnswers_sort, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { listQuestionsWithoutAnswers(fromdate: $fromdate, todate: $todate, min: $min, max: $max, tagged: $tagged, order: $order, sort: $sort, page: $page, pagesize: $pagesize, site: $site) }"
     )
-  "Returns a map of status codes to quantities"
-  myOpenAPIgetInventory: JSON
-    @resolver(subgraph: "my-openapi", operation: "query getInventory { getInventory }")
-  "For valid response try integer IDs with value <= 5 or > 10. Other values will generate exceptions."
-  myOpenAPIgetOrderById("ID of order that needs to be fetched" orderId: BigInt!): Order
+    @source(subgraph: "my-openapi", name: "listQuestionsWithoutAnswers")
+  "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
+  StackExchangelistUnansweredQuestions(
+    fromdate: Int
+    todate: Int
+    min: Int
+    max: Int
+    tagged: String
+    order: queryInput_listUnansweredQuestions_order
+    sort: queryInput_listUnansweredQuestions_sort
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): QuestionsResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/questions/unanswered"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"tagged\":\"tagged\",\"order\":\"order\",\"sort\":\"sort\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query getOrderById($orderId: BigInt!) { getOrderById(orderId: $orderId) }"
+      operation: "query listUnansweredQuestions($fromdate: Int, $todate: Int, $min: Int, $max: Int, $tagged: String, $order: queryInput_listUnansweredQuestions_order, $sort: queryInput_listUnansweredQuestions_sort, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { listUnansweredQuestions(fromdate: $fromdate, todate: $todate, min: $min, max: $max, tagged: $tagged, order: $order, sort: $sort, page: $page, pagesize: $pagesize, site: $site) }"
     )
-  "Logs user into the system"
-  myOpenAPIloginUser(
-    "The user name for login"
-    username: String
-    "The password for login in clear text"
-    password: String
-  ): String
+    @source(subgraph: "my-openapi", name: "listUnansweredQuestions")
+  "Returns all users on a site.\n\nThis method returns a list of users.\n\nThe sorts accepted by this method operate on the following fields of the user object:\n\nreputation – reputation\ncreation – creation_date\nname – display_name\nmodified – last_modified_date\n\nreputation is the default sort.\n\nIt is possible to create moderately complex queries using sort, min, max, fromdate, and todate.\nThe `inname` parameter lets consumers filter the results down to just those users with a certain substring in their display name. For example, `inname=kevin` will return all users with both users named simply \"Kevin\" or those with Kevin as one of (or part of) their names; such as \"Kevin Montrose\"."
+  StackExchangelistUsers(
+    inname: String
+    fromdate: Int
+    todate: Int
+    min: Int
+    max: Int
+    sort: queryInput_listUsers_sort
+    order: queryInput_listUsers_order
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): UsersResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/users"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"inname\":\"inname\",\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"sort\":\"sort\",\"order\":\"order\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query loginUser($username: String, $password: String) { loginUser(username: $username, password: $password) }"
+      operation: "query listUsers($inname: String, $fromdate: Int, $todate: Int, $min: Int, $max: Int, $sort: queryInput_listUsers_sort, $order: queryInput_listUsers_order, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { listUsers(inname: $inname, fromdate: $fromdate, todate: $todate, min: $min, max: $max, sort: $sort, order: $order, page: $page, pagesize: $pagesize, site: $site) }"
     )
-  "Logs out current logged in user session"
-  myOpenAPIlogoutUser: JSON
-    @resolver(subgraph: "my-openapi", operation: "query logoutUser { logoutUser }")
-  "Get user by user name"
-  myOpenAPIgetUserByName(
-    "The name that needs to be fetched. Use user1 for testing."
-    username: String!
-  ): User
+    @source(subgraph: "my-openapi", name: "listUsers")
+  "Returns the user associated with the passed access_token.\n\nThis method returns a [user](https://api.stackexchange.com/docs/types/user)."
+  StackExchangegetMe(site: String! = "stackoverflow"): UsersResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/me"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"site\":\"site\"}"
+    )
     @resolver(
       subgraph: "my-openapi"
-      operation: "query getUserByName($username: String!) { getUserByName(username: $username) }"
+      operation: "query getMe($site: String! = \"stackoverflow\") { getMe(site: $site) }"
     )
+    @source(subgraph: "my-openapi", name: "getMe")
+  "Gets a subset of the reputation changes for users in {ids}.\nReputation changes are intentionally scrubbed of some data to make it difficult to correlate votes on particular posts with user reputation changes. That being said, this method returns enough data for reasonable display of reputation trends.\n{ids} can contain up to 100 semicolon delimited ids. To find ids programmatically look for user_id on user or shallow_user objects.\nThis method returns a list of reputation objects."
+  StackExchangegetUsersReputationChanges(
+    userIds: String!
+    fromdate: Int
+    todate: Int
+    page: Int
+    pagesize: NonNegativeInt
+    site: String! = "stackoverflow"
+  ): ReputationResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/users/{args.userIds}/reputation"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
+    @resolver(
+      subgraph: "my-openapi"
+      operation: "query getUsersReputationChanges($userIds: String!, $fromdate: Int, $todate: Int, $page: Int, $pagesize: NonNegativeInt, $site: String! = \"stackoverflow\") { getUsersReputationChanges(userIds: $userIds, fromdate: $fromdate, todate: $todate, page: $page, pagesize: $pagesize, site: $site) }"
+    )
+    @source(subgraph: "my-openapi", name: "getUsersReputationChanges")
+  "Returns the reputation changed for the user associated with the given access_token.\nThis method returns a list of [reputation changes](https://api.stackexchange.com/docs/types/reputation)."
+  StackExchangegetMyReputation: ReputationResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/me/reputation"
+      operationSpecificHeaders: "{\"accept\":\"*/*\"}"
+      httpMethod: GET
+    )
+    @resolver(subgraph: "my-openapi", operation: "query getMyReputation { getMyReputation }")
+    @source(subgraph: "my-openapi", name: "getMyReputation")
+  "Returns users' public reputation history.\nThis method returns a list of reputation_history."
+  StackExchangegetUsersReputationHistory(
+    userIds: String!
+    page: Int
+    pagesize: Int
+    site: String! = "stackoverflow"
+  ): ReputationHistoryResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/users/{args.userIds}/reputation-history"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"page\":\"page\",\"pagesize\":\"pagesize\",\"site\":\"site\"}"
+    )
+    @resolver(
+      subgraph: "my-openapi"
+      operation: "query getUsersReputationHistory($userIds: String!, $page: Int, $pagesize: Int, $site: String! = \"stackoverflow\") { getUsersReputationHistory(userIds: $userIds, page: $page, pagesize: $pagesize, site: $site) }"
+    )
+    @source(subgraph: "my-openapi", name: "getUsersReputationHistory")
+  "Returns user's public reputation history.\n\nThis method returns a list of [reputation_history](https://api.stackexchange.com/docs/types/reputation-history)."
+  StackExchangegetMyReputationHistory(page: Int, pagesize: Int): ReputationHistoryResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/me/reputation-history"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"page\":\"page\",\"pagesize\":\"pagesize\"}"
+    )
+    @resolver(
+      subgraph: "my-openapi"
+      operation: "query getMyReputationHistory($page: Int, $pagesize: Int) { getMyReputationHistory(page: $page, pagesize: $pagesize) }"
+    )
+    @source(subgraph: "my-openapi", name: "getMyReputationHistory")
+  "Returns a list of [answers](https://api.stackexchange.com/docs/types/answer)."
+  StackExchangelistAnswers(
+    "This parameter can be the full domain name (ie. \"stackoverflow.com\"), or a short form identified by api_site_parameter on the site object."
+    site: String
+    "Unix epoch time"
+    fromdate: Int
+    "Unix epoch time"
+    todate: Int
+    "Unix epoch time"
+    min: Int
+    "Unix epoch time"
+    max: Int
+    sort: queryInput_listAnswers_sort
+    order: queryInput_listAnswers_order
+    page: Int
+    pagesize: Int
+  ): AnswersResponse
+    @httpOperation(
+      subgraph: "my-openapi"
+      path: "/answers"
+      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
+      httpMethod: GET
+      queryParamArgMap: "{\"site\":\"site\",\"fromdate\":\"fromdate\",\"todate\":\"todate\",\"min\":\"min\",\"max\":\"max\",\"sort\":\"sort\",\"order\":\"order\",\"page\":\"page\",\"pagesize\":\"pagesize\"}"
+    )
+    @resolver(
+      subgraph: "my-openapi"
+      operation: "query listAnswers($site: String, $fromdate: Int, $todate: Int, $min: Int, $max: Int, $sort: queryInput_listAnswers_sort, $order: queryInput_listAnswers_order, $page: Int, $pagesize: Int) { listAnswers(site: $site, fromdate: $fromdate, todate: $todate, min: $min, max: $max, sort: $sort, order: $order, page: $page, pagesize: $pagesize) }"
+    )
+    @source(subgraph: "my-openapi", name: "listAnswers")
 }
 
-"Pet object that needs to be added to the store"
-type Pet @source(subgraph: "my-openapi", name: "Pet") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String! @source(subgraph: "my-openapi", name: "name")
-  myOpenAPIcategory: Category @source(subgraph: "my-openapi", name: "category")
-  myOpenAPIphotoUrls: [String]! @source(subgraph: "my-openapi", name: "photoUrls")
-  myOpenAPItags: [Tag] @source(subgraph: "my-openapi", name: "tags")
-  myOpenAPIstatus: mutation_updatePet_status @source(subgraph: "my-openapi", name: "status")
+type QuestionsResponse @source(subgraph: "my-openapi", name: "QuestionsResponse") {
+  "A list of questions."
+  items: [Question] @source(subgraph: "my-openapi", name: "items")
+  has_more: Boolean @source(subgraph: "my-openapi", name: "has_more")
+  quota_max: Int @source(subgraph: "my-openapi", name: "quota_max")
+  quota_remaining: Int @source(subgraph: "my-openapi", name: "quota_remaining")
+}
+
+type Question @source(subgraph: "my-openapi", name: "Question") {
+  tags: [String] @source(subgraph: "my-openapi", name: "tags")
+  owner: QuestionOwner @source(subgraph: "my-openapi", name: "owner")
+  is_answered: Boolean @source(subgraph: "my-openapi", name: "is_answered")
+  view_count: Int @source(subgraph: "my-openapi", name: "view_count")
+  answer_count: Int @source(subgraph: "my-openapi", name: "answer_count")
+  score: Int @source(subgraph: "my-openapi", name: "score")
+  last_activity_date: Int @source(subgraph: "my-openapi", name: "last_activity_date")
+  creation_date: Int @source(subgraph: "my-openapi", name: "creation_date")
+  question_id: Int @source(subgraph: "my-openapi", name: "question_id")
+  link: String @source(subgraph: "my-openapi", name: "link")
+  title: String @source(subgraph: "my-openapi", name: "title")
+}
+
+type QuestionOwner @source(subgraph: "my-openapi", name: "QuestionOwner") {
+  reputation: Int @source(subgraph: "my-openapi", name: "reputation")
+  user_id: Int @source(subgraph: "my-openapi", name: "user_id")
+  user_type: String @source(subgraph: "my-openapi", name: "user_type")
+  profile_image: String @source(subgraph: "my-openapi", name: "profile_image")
+  display_name: String @source(subgraph: "my-openapi", name: "display_name")
+  link: String @source(subgraph: "my-openapi", name: "link")
+}
+
+enum queryInput_listQuestions_order
+  @source(subgraph: "my-openapi", name: "queryInput_listQuestions_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
+}
+
+enum queryInput_listQuestions_sort
+  @source(subgraph: "my-openapi", name: "queryInput_listQuestions_sort") {
+  activity @source(subgraph: "my-openapi", name: "activity")
+  votes @source(subgraph: "my-openapi", name: "votes")
+  creation @source(subgraph: "my-openapi", name: "creation")
+  hot @source(subgraph: "my-openapi", name: "hot")
+  week @source(subgraph: "my-openapi", name: "week")
+  month @source(subgraph: "my-openapi", name: "month")
+}
+
+enum queryInput_listFeaturedQuestions_order
+  @source(subgraph: "my-openapi", name: "queryInput_listFeaturedQuestions_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
+}
+
+enum queryInput_listFeaturedQuestions_sort
+  @source(subgraph: "my-openapi", name: "queryInput_listFeaturedQuestions_sort") {
+  activity @source(subgraph: "my-openapi", name: "activity")
+  votes @source(subgraph: "my-openapi", name: "votes")
+  creation @source(subgraph: "my-openapi", name: "creation")
+}
+
+enum queryInput_listQuestionsWithoutAnswers_order
+  @source(subgraph: "my-openapi", name: "queryInput_listQuestionsWithoutAnswers_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
+}
+
+enum queryInput_listQuestionsWithoutAnswers_sort
+  @source(subgraph: "my-openapi", name: "queryInput_listQuestionsWithoutAnswers_sort") {
+  activity @source(subgraph: "my-openapi", name: "activity")
+  votes @source(subgraph: "my-openapi", name: "votes")
+  creation @source(subgraph: "my-openapi", name: "creation")
+}
+
+enum queryInput_listUnansweredQuestions_order
+  @source(subgraph: "my-openapi", name: "queryInput_listUnansweredQuestions_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
+}
+
+enum queryInput_listUnansweredQuestions_sort
+  @source(subgraph: "my-openapi", name: "queryInput_listUnansweredQuestions_sort") {
+  activity @source(subgraph: "my-openapi", name: "activity")
+  votes @source(subgraph: "my-openapi", name: "votes")
+  creation @source(subgraph: "my-openapi", name: "creation")
+}
+
+type UsersResponse @source(subgraph: "my-openapi", name: "UsersResponse") {
+  items: [User] @source(subgraph: "my-openapi", name: "items")
+  has_more: Boolean @source(subgraph: "my-openapi", name: "has_more")
+  quote_max: Int @source(subgraph: "my-openapi", name: "quote_max")
+  quota_remaining: Int @source(subgraph: "my-openapi", name: "quota_remaining")
+}
+
+type User @source(subgraph: "my-openapi", name: "User") {
+  badge_counts: UserBadgeCounts @source(subgraph: "my-openapi", name: "badge_counts")
+  account_id: BigInt @source(subgraph: "my-openapi", name: "account_id")
+  is_employee: Boolean @source(subgraph: "my-openapi", name: "is_employee")
+  last_modified_date: BigInt @source(subgraph: "my-openapi", name: "last_modified_date")
+  last_access_date: BigInt @source(subgraph: "my-openapi", name: "last_access_date")
+  reputation_change_year: Int @source(subgraph: "my-openapi", name: "reputation_change_year")
+  reputation_change_quarter: Int @source(subgraph: "my-openapi", name: "reputation_change_quarter")
+  reputation_change_month: Int @source(subgraph: "my-openapi", name: "reputation_change_month")
+  reputation_change_week: Int @source(subgraph: "my-openapi", name: "reputation_change_week")
+  reputation_change_day: Int @source(subgraph: "my-openapi", name: "reputation_change_day")
+  reputation: BigInt @source(subgraph: "my-openapi", name: "reputation")
+  creation_date: BigInt @source(subgraph: "my-openapi", name: "creation_date")
+  user_type: String @source(subgraph: "my-openapi", name: "user_type")
+  user_id: BigInt @source(subgraph: "my-openapi", name: "user_id")
+  accept_rate: Int @source(subgraph: "my-openapi", name: "accept_rate")
+  location: String @source(subgraph: "my-openapi", name: "location")
+  website_url: URL @source(subgraph: "my-openapi", name: "website_url")
+  link: URL @source(subgraph: "my-openapi", name: "link")
+  profile_image: URL @source(subgraph: "my-openapi", name: "profile_image")
+  display_name: String @source(subgraph: "my-openapi", name: "display_name")
+}
+
+type UserBadgeCounts @source(subgraph: "my-openapi", name: "UserBadgeCounts") {
+  bronze: Int @source(subgraph: "my-openapi", name: "bronze")
+  silver: Int @source(subgraph: "my-openapi", name: "silver")
+  gold: Int @source(subgraph: "my-openapi", name: "gold")
 }
 
 "The `BigInt` scalar type represents non-fractional signed whole numeric values."
 scalar BigInt @source(subgraph: "my-openapi", name: "BigInt")
 
-type Category @source(subgraph: "my-openapi", name: "Category") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String @source(subgraph: "my-openapi", name: "name")
+"A field whose value conforms to the standard URL format as specified in RFC3986: https://www.ietf.org/rfc/rfc3986.txt."
+scalar URL @source(subgraph: "my-openapi", name: "URL")
+
+enum queryInput_listUsers_sort @source(subgraph: "my-openapi", name: "queryInput_listUsers_sort") {
+  reputation @source(subgraph: "my-openapi", name: "reputation")
+  creation @source(subgraph: "my-openapi", name: "creation")
+  name @source(subgraph: "my-openapi", name: "name")
+  modified @source(subgraph: "my-openapi", name: "modified")
 }
 
-type Tag @source(subgraph: "my-openapi", name: "Tag") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String @source(subgraph: "my-openapi", name: "name")
+enum queryInput_listUsers_order
+  @source(subgraph: "my-openapi", name: "queryInput_listUsers_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
 }
 
-"pet status in the store"
-enum mutation_updatePet_status @source(subgraph: "my-openapi", name: "mutation_updatePet_status") {
-  available @source(subgraph: "my-openapi", name: "available")
-  pending @source(subgraph: "my-openapi", name: "pending")
-  sold @source(subgraph: "my-openapi", name: "sold")
+type ReputationResponse @source(subgraph: "my-openapi", name: "ReputationResponse") {
+  "A list of reputation_history."
+  items: [ReputationChange] @source(subgraph: "my-openapi", name: "items")
+  has_more: Boolean @source(subgraph: "my-openapi", name: "has_more")
+  quota_max: Int @source(subgraph: "my-openapi", name: "quota_max")
+  quota_remaining: Int @source(subgraph: "my-openapi", name: "quota_remaining")
 }
 
-"Status values that need to be considered for filter"
-enum queryInput_findPetsByStatus_status
-  @source(subgraph: "my-openapi", name: "queryInput_findPetsByStatus_status") {
-  available @source(subgraph: "my-openapi", name: "available")
-  pending @source(subgraph: "my-openapi", name: "pending")
-  sold @source(subgraph: "my-openapi", name: "sold")
+type ReputationChange @source(subgraph: "my-openapi", name: "ReputationChange") {
+  on_date: Int @source(subgraph: "my-openapi", name: "on_date")
+  reputation_change: Int @source(subgraph: "my-openapi", name: "reputation_change")
+  vote_type: query_getUsersReputationChanges_items_items_vote_type
+    @source(subgraph: "my-openapi", name: "vote_type")
+  post_type: String @source(subgraph: "my-openapi", name: "post_type")
+  post_id: Int @source(subgraph: "my-openapi", name: "post_id")
+  user_id: Int @source(subgraph: "my-openapi", name: "user_id")
 }
 
-"The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
-scalar JSON
-  @source(subgraph: "my-openapi", name: "JSON")
-  @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
-
-type Order @source(subgraph: "my-openapi", name: "Order") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIpetId: BigInt @source(subgraph: "my-openapi", name: "petId")
-  myOpenAPIquantity: Int @source(subgraph: "my-openapi", name: "quantity")
-  myOpenAPIshipDate: DateTime @source(subgraph: "my-openapi", name: "shipDate")
-  myOpenAPIstatus: mutation_placeOrder_status @source(subgraph: "my-openapi", name: "status")
-  myOpenAPIcomplete: Boolean @source(subgraph: "my-openapi", name: "complete")
+enum query_getUsersReputationChanges_items_items_vote_type
+  @source(subgraph: "my-openapi", name: "query_getUsersReputationChanges_items_items_vote_type") {
+  accepts @source(subgraph: "my-openapi", name: "accepts")
+  bounties_won @source(subgraph: "my-openapi", name: "bounties_won")
+  down_votes @source(subgraph: "my-openapi", name: "down_votes")
+  up_votes @source(subgraph: "my-openapi", name: "up_votes")
 }
 
-"A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar."
-scalar DateTime @source(subgraph: "my-openapi", name: "DateTime")
+"Integers that will have a value of 0 or more."
+scalar NonNegativeInt @source(subgraph: "my-openapi", name: "NonNegativeInt")
 
-"Order Status"
-enum mutation_placeOrder_status
-  @source(subgraph: "my-openapi", name: "mutation_placeOrder_status") {
-  placed @source(subgraph: "my-openapi", name: "placed")
-  approved @source(subgraph: "my-openapi", name: "approved")
-  delivered @source(subgraph: "my-openapi", name: "delivered")
+type ReputationHistoryResponse @source(subgraph: "my-openapi", name: "ReputationHistoryResponse") {
+  "A list of reputation_history."
+  items: [ReputationHistory] @source(subgraph: "my-openapi", name: "items")
+  has_more: Boolean @source(subgraph: "my-openapi", name: "has_more")
+  quota_max: Int @source(subgraph: "my-openapi", name: "quota_max")
+  quota_remaining: Int @source(subgraph: "my-openapi", name: "quota_remaining")
 }
 
-type User @source(subgraph: "my-openapi", name: "User") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIusername: String @source(subgraph: "my-openapi", name: "username")
-  myOpenAPIfirstName: String @source(subgraph: "my-openapi", name: "firstName")
-  myOpenAPIlastName: String @source(subgraph: "my-openapi", name: "lastName")
-  myOpenAPIemail: EmailAddress @source(subgraph: "my-openapi", name: "email")
-  myOpenAPIpassword: String @source(subgraph: "my-openapi", name: "password")
-  myOpenAPIphone: String @source(subgraph: "my-openapi", name: "phone")
-  "User Status"
-  myOpenAPIuserStatus: Int @source(subgraph: "my-openapi", name: "userStatus")
+type ReputationHistory @source(subgraph: "my-openapi", name: "ReputationHistory") {
+  reputation_history_type: String @source(subgraph: "my-openapi", name: "reputation_history_type")
+  reputation_change: Int @source(subgraph: "my-openapi", name: "reputation_change")
+  post_id: Int @source(subgraph: "my-openapi", name: "post_id")
+  creation_date: Int @source(subgraph: "my-openapi", name: "creation_date")
+  user_id: Int @source(subgraph: "my-openapi", name: "user_id")
 }
 
-"A field whose value conforms to the standard internet email address format as specified in HTML Spec: https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address."
-scalar EmailAddress
-  @source(subgraph: "my-openapi", name: "EmailAddress")
-  @specifiedBy(url: "https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address")
-
-type Mutation {
-  "Update an existing pet by Id"
-  myOpenAPIupdatePet(input: Pet_Input): Pet
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationupdatePet($input: Pet_Input) { updatePet(input: $input) }"
-    )
-  "Add a new pet to the store"
-  myOpenAPIaddPet(input: Pet_Input): Pet
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationaddPet($input: Pet_Input) { addPet(input: $input) }"
-    )
-  "Updates a pet in the store with form data"
-  myOpenAPIupdatePetWithForm(
-    "ID of pet that needs to be updated"
-    petId: BigInt!
-    "Name of pet that needs to be updated"
-    name: String
-    "Status of pet that needs to be updated"
-    status: String
-  ): JSON
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationupdatePetWithForm($petId: BigInt!, $name: String, $status: String) { updatePetWithForm(petId: $petId, name: $name, status: $status) }"
-    )
-  "Deletes a pet"
-  myOpenAPIdeletePet(api_key: String, "Pet id to delete" petId: BigInt!): JSON
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationdeletePet($api_key: String, $petId: BigInt!) { deletePet(api_key: $api_key, petId: $petId) }"
-    )
-  "uploads an image"
-  myOpenAPIuploadFile(
-    "ID of pet to update"
-    petId: BigInt!
-    "Additional Metadata"
-    additionalMetadata: String
-    input: File
-  ): ApiResponse
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationuploadFile($petId: BigInt!, $additionalMetadata: String, $input: File) { uploadFile(petId: $petId, additionalMetadata: $additionalMetadata, input: $input) }"
-    )
-  "Place a new order in the store"
-  myOpenAPIplaceOrder(input: Order_Input): Order
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationplaceOrder($input: Order_Input) { placeOrder(input: $input) }"
-    )
-  "For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors"
-  myOpenAPIdeleteOrder("ID of the order that needs to be deleted" orderId: BigInt!): JSON
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationdeleteOrder($orderId: BigInt!) { deleteOrder(orderId: $orderId) }"
-    )
-  "This can only be done by the logged in user."
-  myOpenAPIcreateUser(input: User_Input): User
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationcreateUser($input: User_Input) { createUser(input: $input) }"
-    )
-  "Creates list of users with given input array"
-  myOpenAPIcreateUsersWithListInput(input: [User_Input]): User
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationcreateUsersWithListInput($input: [User_Input]) { createUsersWithListInput(input: $input) }"
-    )
-  "This can only be done by the logged in user."
-  myOpenAPIupdateUser("name that need to be deleted" username: String!, input: User_Input): JSON
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationupdateUser($username: String!, $input: User_Input) { updateUser(username: $username, input: $input) }"
-    )
-  "This can only be done by the logged in user."
-  myOpenAPIdeleteUser("The name that needs to be deleted" username: String!): JSON
-    @resolver(
-      subgraph: "my-openapi"
-      operation: "mutation mutationdeleteUser($username: String!) { deleteUser(username: $username) }"
-    )
+type AnswersResponse @source(subgraph: "my-openapi", name: "AnswersResponse") {
+  items: [Answer] @source(subgraph: "my-openapi", name: "items")
+  has_more: Boolean @source(subgraph: "my-openapi", name: "has_more")
+  backoff: Int @source(subgraph: "my-openapi", name: "backoff")
+  quota_max: Int @source(subgraph: "my-openapi", name: "quota_max")
+  quota_remaining: Int @source(subgraph: "my-openapi", name: "quota_remaining")
 }
 
-"Pet object that needs to be added to the store"
-input Pet_Input @source(subgraph: "my-openapi", name: "Pet_Input") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String! @source(subgraph: "my-openapi", name: "name")
-  myOpenAPIcategory: Category_Input @source(subgraph: "my-openapi", name: "category")
-  myOpenAPIphotoUrls: [String]! @source(subgraph: "my-openapi", name: "photoUrls")
-  myOpenAPItags: [Tag_Input] @source(subgraph: "my-openapi", name: "tags")
-  myOpenAPIstatus: mutation_updatePet_status @source(subgraph: "my-openapi", name: "status")
+type Answer @source(subgraph: "my-openapi", name: "Answer") {
+  accepted: Boolean @source(subgraph: "my-openapi", name: "accepted")
+  answer_id: Int @source(subgraph: "my-openapi", name: "answer_id")
+  awarded_bounty_amount: Int @source(subgraph: "my-openapi", name: "awarded_bounty_amount")
+  awarded_bounty_users: [ShallowUser] @source(subgraph: "my-openapi", name: "awarded_bounty_users")
+  body: String @source(subgraph: "my-openapi", name: "body")
+  body_markdown: String @source(subgraph: "my-openapi", name: "body_markdown")
+  can_flag: Boolean @source(subgraph: "my-openapi", name: "can_flag")
+  comment_count: Int @source(subgraph: "my-openapi", name: "comment_count")
+  comments: [Comment] @source(subgraph: "my-openapi", name: "comments")
+  community_owned_date: Int @source(subgraph: "my-openapi", name: "community_owned_date")
+  content_license: String @source(subgraph: "my-openapi", name: "content_license")
+  creation_date: Int @source(subgraph: "my-openapi", name: "creation_date")
+  down_vote_count: Int @source(subgraph: "my-openapi", name: "down_vote_count")
+  is_accepted: Boolean @source(subgraph: "my-openapi", name: "is_accepted")
+  last_activity_date: Int @source(subgraph: "my-openapi", name: "last_activity_date")
+  last_edit_date: Int @source(subgraph: "my-openapi", name: "last_edit_date")
+  last_editor: ShallowUser @source(subgraph: "my-openapi", name: "last_editor")
+  link: String @source(subgraph: "my-openapi", name: "link")
+  locked_date: Int @source(subgraph: "my-openapi", name: "locked_date")
+  owner: ShallowUser @source(subgraph: "my-openapi", name: "owner")
+  question_id: Int @source(subgraph: "my-openapi", name: "question_id")
+  score: Boolean @source(subgraph: "my-openapi", name: "score")
+  share_link: Int @source(subgraph: "my-openapi", name: "share_link")
+  tags: [String] @source(subgraph: "my-openapi", name: "tags")
+  title: String @source(subgraph: "my-openapi", name: "title")
+  up_vote_count: Int @source(subgraph: "my-openapi", name: "up_vote_count")
+  upvoted: Boolean @source(subgraph: "my-openapi", name: "upvoted")
 }
 
-input Category_Input @source(subgraph: "my-openapi", name: "Category_Input") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String @source(subgraph: "my-openapi", name: "name")
+type ShallowUser @source(subgraph: "my-openapi", name: "ShallowUser") {
+  id: String @source(subgraph: "my-openapi", name: "id")
 }
 
-input Tag_Input @source(subgraph: "my-openapi", name: "Tag_Input") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIname: String @source(subgraph: "my-openapi", name: "name")
+type Comment @source(subgraph: "my-openapi", name: "Comment") {
+  id: String @source(subgraph: "my-openapi", name: "id")
 }
 
-type ApiResponse @source(subgraph: "my-openapi", name: "ApiResponse") {
-  myOpenAPIcode: Int @source(subgraph: "my-openapi", name: "code")
-  myOpenAPItype: String @source(subgraph: "my-openapi", name: "type")
-  myOpenAPImessage: String @source(subgraph: "my-openapi", name: "message")
+"`activity` corresponds to `Answer. last_activity_date` , `creation` to `Answer.creation_date` and `votes` to `Answer.score`"
+enum queryInput_listAnswers_sort
+  @source(subgraph: "my-openapi", name: "queryInput_listAnswers_sort") {
+  activity @source(subgraph: "my-openapi", name: "activity")
+  creation @source(subgraph: "my-openapi", name: "creation")
+  votes @source(subgraph: "my-openapi", name: "votes")
 }
 
-"The `File` scalar type represents a file upload."
-scalar File @source(subgraph: "my-openapi", name: "File")
-
-input Order_Input @source(subgraph: "my-openapi", name: "Order_Input") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIpetId: BigInt @source(subgraph: "my-openapi", name: "petId")
-  myOpenAPIquantity: Int @source(subgraph: "my-openapi", name: "quantity")
-  myOpenAPIshipDate: DateTime @source(subgraph: "my-openapi", name: "shipDate")
-  myOpenAPIstatus: mutation_placeOrder_status @source(subgraph: "my-openapi", name: "status")
-  myOpenAPIcomplete: Boolean @source(subgraph: "my-openapi", name: "complete")
-}
-
-input User_Input @source(subgraph: "my-openapi", name: "User_Input") {
-  myOpenAPIid: BigInt @source(subgraph: "my-openapi", name: "id")
-  myOpenAPIusername: String @source(subgraph: "my-openapi", name: "username")
-  myOpenAPIfirstName: String @source(subgraph: "my-openapi", name: "firstName")
-  myOpenAPIlastName: String @source(subgraph: "my-openapi", name: "lastName")
-  myOpenAPIemail: EmailAddress @source(subgraph: "my-openapi", name: "email")
-  myOpenAPIpassword: String @source(subgraph: "my-openapi", name: "password")
-  myOpenAPIphone: String @source(subgraph: "my-openapi", name: "phone")
-  "User Status"
-  myOpenAPIuserStatus: Int @source(subgraph: "my-openapi", name: "userStatus")
+enum queryInput_listAnswers_order
+  @source(subgraph: "my-openapi", name: "queryInput_listAnswers_order") {
+  desc @source(subgraph: "my-openapi", name: "desc")
+  asc @source(subgraph: "my-openapi", name: "asc")
 }
 
 scalar ObjMap @source(subgraph: "my-openapi", name: "ObjMap")

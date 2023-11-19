@@ -55,3 +55,22 @@ type B_Foo @source(subgraph: "B", name: "Foo") {
   bar: String! @source(subgraph: "B", name: "bar")
 }"
 `;
+
+exports[`Composition keeps the directives 1`] = `
+"schema {
+  query: Query
+}
+
+directive @foo on FIELD_DEFINITION
+
+type Query {
+  myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }")
+  foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }")
+  cFoo: Foo! @foo @resolver(subgraph: "C", operation: "query cFoo { cFoo }")
+}
+
+type Foo @source(subgraph: "C", name: "Foo") {
+  id: ID! @source(subgraph: "C", name: "id")
+  bar: String! @source(subgraph: "B", name: "bar")
+}"
+`;

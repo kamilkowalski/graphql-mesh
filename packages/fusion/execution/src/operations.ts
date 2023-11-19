@@ -5,10 +5,11 @@ import {
   Kind,
   OperationDefinitionNode,
 } from 'graphql';
-import { Executor, getRootTypeMap } from '@graphql-tools/utils';
+import { getRootTypeMap } from '@graphql-tools/utils';
 import {
   createExecutableResolverOperationNodesWithDependencyMap,
   executeResolverOperationNodesWithDependenciesInParallel,
+  OnExecuteFn,
 } from './execution.js';
 import { FlattenedFieldNode, flattenSelections } from './flattenSelections.js';
 import { visitFieldNodeForTypeResolvers } from './query-planning.js';
@@ -61,12 +62,19 @@ export function planOperation(
   });
 }
 
-export function executeOperation(
-  supergraph: GraphQLSchema,
-  executorMap: Map<string, Executor>,
-  document: DocumentNode,
-  operationName?: string,
-) {
+export function executeOperation({
+  supergraph,
+  onExecute,
+  document,
+  operationName,
+  variables = {},
+}: {
+  supergraph: GraphQLSchema;
+  onExecute: OnExecuteFn;
+  document: DocumentNode;
+  operationName?: string;
+  variables?: Record<string, any>;
+}) {
   const plan = planOperation(supergraph, document, operationName);
   const executablePlan = createExecutableResolverOperationNodesWithDependencyMap(
     plan.resolverOperationNodes,
@@ -76,7 +84,7 @@ export function executeOperation(
   return executeResolverOperationNodesWithDependenciesInParallel(
     executablePlan.newResolverOperationNodes,
     executablePlan.newResolverDependencyMap,
-    new Map(),
-    executorMap,
+    new Map(Object.entries(variables)),
+    onExecute,
   );
 }

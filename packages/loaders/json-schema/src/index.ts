@@ -1,4 +1,11 @@
-import { loadGraphQLSchemaFromJSONSchemas } from './loadGraphQLSchemaFromJSONSchemas.js';
+import { GraphQLSchema } from 'graphql';
+import { createDefaultExecutor } from '@graphql-tools/delegate';
+import { ProcessDirectiveArgs, processDirectives } from './directives.js';
+import {
+  loadGraphQLSchemaFromJSONSchemas,
+  loadNonExecutableGraphQLSchemaFromJSONSchemas,
+} from './loadGraphQLSchemaFromJSONSchemas.js';
+import { JSONSchemaLoaderOptions } from './types.js';
 
 export default loadGraphQLSchemaFromJSONSchemas;
 export * from './loadGraphQLSchemaFromJSONSchemas.js';
@@ -7,3 +14,23 @@ export * from './getDereferencedJSONSchemaFromOperations.js';
 export * from './getGraphQLSchemaFromDereferencedJSONSchema.js';
 export * from './types.js';
 export { processDirectives } from './directives.js';
+
+export function loadJSONSchemaSubgraph(
+  name: string,
+  options: JSONSchemaLoaderOptions,
+): { name: string; schema$: Promise<GraphQLSchema> } {
+  return {
+    name,
+    schema$: loadNonExecutableGraphQLSchemaFromJSONSchemas(name, options),
+  };
+}
+
+export function getSubgraphExecutor({
+  getSubgraph,
+  options,
+}: {
+  getSubgraph: () => GraphQLSchema;
+  options: ProcessDirectiveArgs;
+}) {
+  return createDefaultExecutor(processDirectives(getSubgraph(), options));
+}

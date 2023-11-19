@@ -6,8 +6,14 @@ import {
   isSpecifiedScalarType,
   OperationTypeNode,
 } from 'graphql';
-import { mergeSchemas } from '@graphql-tools/schema';
-import { getRootTypeMap, MapperKind, mapSchema } from '@graphql-tools/utils';
+import { mergeSchemas, MergeSchemasConfig } from '@graphql-tools/schema';
+import {
+  DirectableGraphQLObject,
+  getDirectives,
+  getRootTypeMap,
+  MapperKind,
+  mapSchema,
+} from '@graphql-tools/utils';
 
 export interface SubgraphConfig {
   name: string;
@@ -23,7 +29,10 @@ const defaultRootTypeNames: Record<OperationTypeNode, string> = {
   subscription: 'Subscription',
 };
 
-export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
+export function composeSubgraphs(
+  subgraphs: SubgraphConfig[],
+  options?: Omit<MergeSchemasConfig, 'schema'>,
+) {
   const annotatedSubgraphs: GraphQLSchema[] = [];
   for (const subgraphConfig of subgraphs) {
     const { name: subgraphName, schema, transforms } = subgraphConfig;
@@ -51,7 +60,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
           extensions: {
             ...type.extensions,
             directives: {
-              ...((type.extensions?.directives as any) || {}),
+              ...getDirectiveExtensions(schema, type),
               source: {
                 subgraph: subgraphName,
                 name: type.name,
@@ -65,7 +74,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
         extensions: {
           ...fieldConfig.extensions,
           directives: {
-            ...((fieldConfig.extensions?.directives as any) || {}),
+            ...getDirectiveExtensions(schema, fieldConfig),
             source: {
               subgraph: subgraphName,
               name: fieldName,
@@ -78,7 +87,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
         extensions: {
           ...valueConfig.extensions,
           directives: {
-            ...((valueConfig.extensions?.directives as any) || {}),
+            ...getDirectiveExtensions(schema, valueConfig),
             source: {
               subgraph: subgraphName,
               name: externalValue,
@@ -94,7 +103,16 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
         const rootFieldArgs: string[] = [];
         if (fieldConfig.args) {
           for (const argName in fieldConfig.args) {
-            variableDefinitions.push(`$${argName}: ${fieldConfig.args[argName].type}`);
+            const arg = fieldConfig.args[argName];
+            let variableDefinitionStr = `$${argName}: ${arg.type}`;
+            if (arg.defaultValue) {
+              variableDefinitionStr += ` = ${
+                typeof arg.defaultValue === 'string'
+                  ? JSON.stringify(arg.defaultValue)
+                  : arg.defaultValue
+              }`;
+            }
+            variableDefinitions.push(variableDefinitionStr);
             rootFieldArgs.push(`${argName}: $${argName}`);
           }
         }
@@ -109,10 +127,14 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
           extensions: {
             ...fieldConfig.extensions,
             directives: {
-              ...((fieldConfig.extensions?.directives as any) || {}),
+              ...getDirectiveExtensions(schema, fieldConfig),
               resolver: {
                 subgraph: subgraphName,
                 operation: operationString,
+              },
+              source: {
+                subgraph: subgraphName,
+                name: fieldName,
               },
             },
           },
@@ -133,6 +155,7 @@ export function composeSubgraphs(subgraphs: SubgraphConfig[]) {
     schemas: annotatedSubgraphs,
     assumeValidSDL: true,
     assumeValid: true,
+    ...options,
   });
 }
 
@@ -188,4 +211,13 @@ export function createRenameFieldTransform(
       ) => [renameFn(field, fieldName, typeName, subgraphConfig) || fieldName, field],
     });
   };
+}
+
+function getDirectiveExtensions(schema: GraphQLSchema, directableNode: DirectableGraphQLObject) {
+  const directives = getDirectives(schema, directableNode);
+  const directivesObject: Record<string, any> = {};
+  for (const directive of directives) {
+    directivesObject[directive.name] = directive.args;
+  }
+  return directivesObject;
 }

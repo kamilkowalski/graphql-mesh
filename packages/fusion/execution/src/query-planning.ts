@@ -33,6 +33,7 @@ export function createResolveNode(
   variableDirectives: ResolverVariableConfig[],
   // Selections that are used to resolve this type
   resolverSelections: FlattenedFieldNode[],
+  resolverArguments: FlattenedFieldNode['arguments'],
   // Visitor context
   ctx: VisitorContext,
 ) {
@@ -97,8 +98,9 @@ export function createResolveNode(
     d => d.subgraph === parentSubgraph && newVariableNameMap.has(d.name),
   );
 
-  for (const varDirective of variableDirectivesForField) {
-    if (varDirective.select) {
+  for (const [oldVarName, newVarName] of newVariableNameMap) {
+    const varDirective = variableDirectivesForField.find(d => d.name === oldVarName);
+    if (varDirective?.select) {
       const varOp = parse(`{${varDirective.select}}`, { noLocation: true });
       const deepestFieldNodePathInVarOp: (string | number)[] = [];
       visit(varOp, {
@@ -108,10 +110,6 @@ export function createResolveNode(
           }
         },
       });
-      const newVarName = newVariableNameMap.get(varDirective.name);
-      if (!newVarName) {
-        throw new Error(`No variable name found for ${varDirective.name}`);
-      }
       const deepestFieldNodeInVarOp = _.get(varOp, deepestFieldNodePathInVarOp) as
         | FieldNode
         | undefined;
@@ -129,8 +127,8 @@ export function createResolveNode(
     }
     // If select is not given, use the variable as the default value for the variable
     else {
-      const fieldArgumentNode = newFieldNode.arguments?.find(
-        argument => argument.name.value === varDirective.name,
+      const fieldArgumentNode = resolverArguments?.find(
+        argument => argument.name.value === oldVarName,
       );
       if (fieldArgumentNode) {
         // If the resolver variable matches the name of the argument, use the variable of the actual operation in the resolver document
@@ -138,13 +136,13 @@ export function createResolveNode(
           const fieldArgValueNode = fieldArgumentNode.value;
           resolverOperationDocument = visit(resolverOperationDocument, {
             [Kind.VARIABLE](node) {
-              if (node.name.value === varDirective.name) {
+              if (node.name.value === newVarName) {
                 return fieldArgValueNode;
               }
               return node;
             },
             [Kind.VARIABLE_DEFINITION](node) {
-              if (node.variable.name.value === varDirective.name) {
+              if (newVarName === node.variable.name.value) {
                 return {
                   ...node,
                   name: fieldArgValueNode.name,
@@ -160,14 +158,14 @@ export function createResolveNode(
             resolverOperationPath,
           );
           const variableInResolveOp = resolverOperation.variableDefinitions?.find(
-            variableDefinition => variableDefinition.variable.name.value === varDirective.name,
+            variableDefinition => variableDefinition.variable.name.value === newVarName,
           );
           if (variableInResolveOp) {
             _.set(variableInResolveOp, 'defaultValue', fieldArgumentNode.value);
           }
         }
       }
-      if (!fieldArgumentNode && requiredVariableNames.has(varDirective.name)) {
+      if (!fieldArgumentNode && requiredVariableNames.has(oldVarName)) {
         throw new Error(
           `Required variable does not select anything for either from field argument or type`,
         );
@@ -376,6 +374,7 @@ export function visitFieldNodeForTypeResolvers(
         resolverDirective,
         variableDirectives,
         resolverSelections,
+        subFieldNode.arguments,
         ctx,
       );
       newFieldNode = newFieldNodeForSubgraph;
@@ -473,6 +472,7 @@ export function visitFieldNodeForTypeResolvers(
       resolverDirective,
       variableDirectives,
       resolverSelections,
+      newFieldNode.arguments,
       ctx,
     );
     newFieldNode = newFieldNodeForSubgraph;

@@ -24,9 +24,11 @@ directive @resolveRoot(subgraph: String) on FIELD_DEFINITION
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "calendly", endpoint: "https://api.calendly.com") {
+type Query @globalOptions(subgraph: "calendly", endpoint: "https://api.calendly.com") @handler(subgraph: "calendly", name: "openapi") {
   "Returns a list of Invitees for an event."
   getInvitees(
     uuid: String!

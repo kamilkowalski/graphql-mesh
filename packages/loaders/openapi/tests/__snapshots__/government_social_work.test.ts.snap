@@ -14,9 +14,11 @@ directive @statusCodeTypeName(subgraph: String, typeName: String, statusCode: ID
 
 directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
 
+directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "example_api", endpoint: "/government/socialwork") {
+type Query @globalOptions(subgraph: "example_api", endpoint: "/government/socialwork") @handler(subgraph: "example_api", name: "openapi") {
   "Gets all \`Assessment\` types"
   getAssessmentTypes(
     "to support API localization"

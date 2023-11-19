@@ -16,6 +16,7 @@ import { process } from '@graphql-mesh/cross-helpers';
 import { Logger } from '@graphql-mesh/types';
 import {
   GlobalOptionsDirective,
+  handlerDirective,
   HTTPOperationDirective,
   LinkDirective,
   LinkResolverDirective,
@@ -39,6 +40,7 @@ export interface AddExecutionLogicToComposerOptions {
   queryParams?: Record<string, string | number | boolean>;
   queryStringOptions?: IStringifyOptions;
   getScalarForFormat?: (format: string) => GraphQLScalarType;
+  handlerName?: string;
 }
 
 const responseMetadataType = new GraphQLObjectType({
@@ -63,6 +65,7 @@ export async function addExecutionDirectivesToComposer(
     endpoint,
     queryParams,
     queryStringOptions,
+    handlerName,
   }: AddExecutionLogicToComposerOptions,
 ) {
   schemaComposer.addDirective(GlobalOptionsDirective);
@@ -75,6 +78,16 @@ export async function addExecutionDirectivesToComposer(
         operationHeaders,
         queryStringOptions,
         queryParams,
+      }),
+    ),
+  );
+  schemaComposer.addDirective(handlerDirective);
+  schemaComposer.Query.setDirectiveByName(
+    'handler',
+    JSON.parse(
+      JSON.stringify({
+        subgraph: subgraphName,
+        name: handlerName,
       }),
     ),
   );

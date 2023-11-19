@@ -14,6 +14,16 @@ export function extractSubgraphFromSupergraph(subgraph: string, supergraph: Grap
       ) {
         return null;
       }
+      const nameArgument = node.arguments?.find(argument => argument.name.value === 'name');
+      if (nameArgument?.value.kind === Kind.STRING) {
+        return {
+          ...node,
+          name: {
+            ...node.name,
+            value: nameArgument.value.value,
+          },
+        };
+      }
       return node;
     },
     ObjectTypeDefinition: {

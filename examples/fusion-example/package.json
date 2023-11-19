@@ -4,10 +4,12 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "node ../../packages/dev-cli/dist/cjs/bin.js"
+    "build": "node ../../packages/dev-cli/dist/cjs/bin.js",
+    "start": "node ../../packages/serve-cli/dist/cjs/bin.js"
   },
   "devDependencies": {
     "@graphql-mesh/dev-cli": "^0.0.0",
+    "@graphql-mesh/serve-cli": "^0.0.0",
     "graphql": "^16.8.1"
   }
 }
