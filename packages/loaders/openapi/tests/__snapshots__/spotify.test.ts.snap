@@ -20,13 +20,11 @@ directive @discriminator(subgraph: String, field: String, mapping: ObjMap) on IN
 
 directive @statusCodeTypeName(subgraph: String, typeName: String, statusCode: ID) repeatable on UNION
 
-directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "test", endpoint: "https://api.spotify.com/v1") @handler(subgraph: "test", name: "openapi") {
+type Query @handler(subgraph: "test", name: "openapi", options: {endpoint: "https://api.spotify.com/v1"}) {
   "Get Spotify catalog information for a single album.\\n"
   get_an_album(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the album."
@@ -2455,6 +2453,14 @@ input start_a_users_playback_request_Input {
 }
 
 scalar ObjMap
+
+input HandlerOptions {
+  subgraph: String
+  endpoint: String
+  operationHeaders: ObjMap
+  queryStringOptions: ObjMap
+  queryParams: ObjMap
+}
 
 enum HTTPMethod {
   GET

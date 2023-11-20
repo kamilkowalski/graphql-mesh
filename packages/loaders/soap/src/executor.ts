@@ -78,7 +78,7 @@ type RootValueMethod = (args: any, context: any, info: GraphQLResolveInfo) => Pr
 function createRootValueMethod(
   soapAnnotations: SoapAnnotations,
   fetchFn: MeshFetch,
-  operationHeaders: Record<string, string> = {},
+  operationHeaders: Record<string, string>,
 ): RootValueMethod {
   const jsonToXMLConverter = new JSONToXMLConverter({
     attributeNamePrefix: '',
@@ -131,7 +131,7 @@ function createRootValueMethod(
 function createRootValue(
   schema: GraphQLSchema,
   fetchFn: MeshFetch,
-  operationHeaders: Record<string, string> = {},
+  operationHeaders: Record<string, string>,
 ) {
   const rootValue: Record<string, RootValueMethod> = {};
   const rootTypes = getRootTypes(schema);
@@ -145,7 +145,7 @@ function createRootValue(
         continue;
       }
       const soapAnnotations: SoapAnnotations = Object.assign({}, ...annotations);
-      rootValue[fieldName] = createRootValueMethod(soapAnnotations, fetchFn);
+      rootValue[fieldName] = createRootValueMethod(soapAnnotations, fetchFn, operationHeaders);
     }
   }
   return rootValue;

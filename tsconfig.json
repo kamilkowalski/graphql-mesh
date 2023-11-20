@@ -40,6 +40,7 @@
       "@graphql-mesh/fusion-*": ["packages/fusion/*/src/index"],
       "@graphql-mesh/dev-cli": ["packages/dev-cli/src/index"],
       "@graphql-mesh/serve-cli": ["packages/serve-cli/src/index"],
+      "@graphql-mesh/http-handler": ["packages/http-handler/src/index"],
       "@graphql-mesh/*": ["packages/handlers/*/src/index"],
       "json-machete": ["packages/json-machete/src/index"],
       "@omnigraph/*": ["packages/loaders/*/src/index"]

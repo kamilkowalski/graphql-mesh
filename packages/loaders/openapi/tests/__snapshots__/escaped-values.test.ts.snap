@@ -7,13 +7,11 @@ exports[`Escaped Values should generate the correct schema: escaped_values-schem
 
 directive @enum(subgraph: String, value: String) on ENUM_VALUE
 
-directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "escaped_values", endpoint: "http://localhost:3000/api") @handler(subgraph: "escaped_values", name: "openapi") {
+type Query @handler(subgraph: "escaped_values", name: "openapi", options: {endpoint: "http://localhost:3000/api"}) {
   test: test_200_response @httpOperation(subgraph: "escaped_values", path: "/test", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET)
 }
 
@@ -29,6 +27,14 @@ enum query_test_test {
   _30 @enum(subgraph: "escaped_values", value: "30")
   _45 @enum(subgraph: "escaped_values", value: "45")
   _60 @enum(subgraph: "escaped_values", value: "60")
+}
+
+input HandlerOptions {
+  subgraph: String
+  endpoint: String
+  operationHeaders: ObjMap
+  queryStringOptions: ObjMap
+  queryParams: ObjMap
 }
 
 scalar ObjMap

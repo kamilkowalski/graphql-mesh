@@ -1075,6 +1075,30 @@ describe('Execution', () => {
       },
     });
   });
+  it.todo('conditional variables', async () => {
+    const supergraph = buildSchema(/* GraphQL */ `
+      type Query {
+        product(id: ID!): Product!
+          @resolver(operation: "query ProductFromA($id: ID!) { product(id: $id) }", subgraph: "A")
+      }
+
+      type Product
+        @source(subgraph: "A")
+        @variable(name: "Product_id", select: "id", subgraph: "A")
+        @variable(name: "Product_id", select: "id", subgraph: "B")
+        @variable(name: "Product_entity", value: "{ id: $Product_id, weight: $Product_weight, price: $Product_price }", subgraph: "B")
+        @resolver(operation: "query ProductFromB($Product_entity: [Any!]!) { _entities(representations: $Product_entity) }", subgraph: "B", kind: BATCH) {
+        {
+        id: ID! @source(subgraph: "A") @source(subgraph: "B")
+        weight: Int! @source(subgraph: "A")
+        price: Int! @source(subgraph: "B")
+        shippingEstimate: Int!
+          @source(subgraph: "B")
+          @variable(name: "Product_weight", select: "weight", subgraph: "A")
+          @variable(name: "Product_price", select: "price", subgraph: "A")
+      }
+    `);
+  });
 });
 
 describe('extractSubgraph', () => {

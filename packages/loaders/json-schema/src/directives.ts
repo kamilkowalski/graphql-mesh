@@ -6,6 +6,7 @@ import {
   GraphQLEnumType,
   GraphQLField,
   GraphQLID,
+  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLInterfaceType,
   GraphQLLeafType,
@@ -367,28 +368,6 @@ export const HTTPOperationDirective = new GraphQLDirective({
   },
 });
 
-export const GlobalOptionsDirective = new GraphQLDirective({
-  name: 'globalOptions',
-  locations: [DirectiveLocation.OBJECT],
-  args: {
-    subgraph: {
-      type: GraphQLString,
-    },
-    endpoint: {
-      type: GraphQLString,
-    },
-    operationHeaders: {
-      type: ObjMapScalar,
-    },
-    queryStringOptions: {
-      type: ObjMapScalar,
-    },
-    queryParams: {
-      type: ObjMapScalar,
-    },
-  },
-});
-
 export const ResponseMetadataDirective = new GraphQLDirective({
   name: 'responseMetadata',
   locations: [DirectiveLocation.FIELD_DEFINITION],
@@ -597,10 +576,10 @@ export function processDirectives(
   if (nonExecutableObjMapScalar && isScalarType(nonExecutableObjMapScalar)) {
     addExecutionLogicToScalar(nonExecutableObjMapScalar, ObjMapScalar);
   }
-  let [globalOptions = {}] = (getDirective(schema, schema.getQueryType(), 'globalOptions') ||
-    []) as [GlobalOptions];
-  globalOptions = {
-    ...globalOptions,
+  const handlerDirectives = getDirective(schema, schema.getQueryType(), 'handler');
+  const currDirective = handlerDirectives?.[0];
+  const globalOptions = {
+    ...(currDirective?.options || {}),
     ...extraGlobalOptions,
   };
   const typeMap = schema.getTypeMap();
@@ -801,7 +780,28 @@ export const ExampleDirective = new GraphQLDirective({
   isRepeatable: true,
 });
 
-export const handlerDirective = new GraphQLDirective({
+export const HandlerOptionsInputType = new GraphQLInputObjectType({
+  name: 'HandlerOptions',
+  fields: {
+    subgraph: {
+      type: GraphQLString,
+    },
+    endpoint: {
+      type: GraphQLString,
+    },
+    operationHeaders: {
+      type: ObjMapScalar,
+    },
+    queryStringOptions: {
+      type: ObjMapScalar,
+    },
+    queryParams: {
+      type: ObjMapScalar,
+    },
+  },
+});
+
+export const HandlerDirective = new GraphQLDirective({
   name: 'handler',
   args: {
     subgraph: {
@@ -811,7 +811,7 @@ export const handlerDirective = new GraphQLDirective({
       type: GraphQLString,
     },
     options: {
-      type: ObjMapScalar,
+      type: HandlerOptionsInputType,
     },
   },
   locations: [DirectiveLocation.OBJECT],

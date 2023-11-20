@@ -8,11 +8,13 @@ import {
 import { getRootTypeMap } from '@graphql-tools/utils';
 import {
   createExecutableResolverOperationNodesWithDependencyMap,
+  ExecutableResolverOperationNode,
   executeResolverOperationNodesWithDependenciesInParallel,
   OnExecuteFn,
 } from './execution.js';
 import { FlattenedFieldNode, flattenSelections } from './flattenSelections.js';
-import { visitFieldNodeForTypeResolvers } from './query-planning.js';
+import { ResolverOperationNode, visitFieldNodeForTypeResolvers } from './query-planning.js';
+import { SerializedResolverOperationNode } from './serialization.js';
 
 export function planOperation(
   supergraph: GraphQLSchema,
@@ -62,6 +64,21 @@ export function planOperation(
   });
 }
 
+export interface ExecutableOperationPlan {
+  resolverOperationNodes: ExecutableResolverOperationNode[];
+  resolverDependencyFieldMap: Map<string, ExecutableResolverOperationNode[]>;
+}
+
+export interface NonExecutableOperationPlan {
+  resolverOperationNodes: ResolverOperationNode[];
+  resolverDependencyFieldMap: Map<string, ResolverOperationNode[]>;
+}
+
+export interface SerializableOperationPlan {
+  resolverOperationNodes: SerializedResolverOperationNode[];
+  resolverDependencyFieldMap: Map<string, SerializedResolverOperationNode[]>;
+}
+
 export function executeOperation({
   supergraph,
   onExecute,
@@ -80,10 +97,21 @@ export function executeOperation({
     plan.resolverOperationNodes,
     plan.resolverDependencyFieldMap,
   );
+  return executeOperationPlan({ executablePlan, onExecute, variables });
+}
 
+export function executeOperationPlan({
+  executablePlan,
+  onExecute,
+  variables,
+}: {
+  executablePlan: ExecutableOperationPlan;
+  onExecute: OnExecuteFn;
+  variables?: Record<string, any>;
+}) {
   return executeResolverOperationNodesWithDependenciesInParallel(
-    executablePlan.newResolverOperationNodes,
-    executablePlan.newResolverDependencyMap,
+    executablePlan.resolverOperationNodes,
+    executablePlan.resolverDependencyFieldMap,
     new Map(Object.entries(variables)),
     onExecute,
   );

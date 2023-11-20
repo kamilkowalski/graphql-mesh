@@ -4,15 +4,7 @@ schema {
 
 directive @enum(subgraph: String, value: String) on ENUM_VALUE
 
-directive @globalOptions(
-  subgraph: String
-  endpoint: String
-  operationHeaders: ObjMap
-  queryStringOptions: ObjMap
-  queryParams: ObjMap
-) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(
   subgraph: String
@@ -26,10 +18,13 @@ directive @httpOperation(
 ) on FIELD_DEFINITION
 
 type Query
-  @globalOptions(subgraph: "my-openapi", endpoint: "https://api.stackexchange.com/2.2")
-  @handler(subgraph: "my-openapi", name: "openapi") {
+  @handler(
+    subgraph: "my-openapi"
+    name: "openapi"
+    options: { endpoint: "https://api.stackexchange.com/2.2" }
+  ) {
   "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
-  StackExchangelistQuestions(
+  listQuestions(
     fromdate: Int
     todate: Int
     min: Int
@@ -54,7 +49,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "listQuestions")
   "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
-  StackExchangelistFeaturedQuestions(
+  listFeaturedQuestions(
     fromdate: Int
     todate: Int
     min: Int
@@ -79,7 +74,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "listFeaturedQuestions")
   "Returns questions which have received no answers.\nCompare with /questions/unanswered which merely returns questions that the sites consider insufficiently well answered."
-  StackExchangelistQuestionsWithoutAnswers(
+  listQuestionsWithoutAnswers(
     fromdate: Int
     todate: Int
     min: Int
@@ -104,7 +99,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "listQuestionsWithoutAnswers")
   "Gets all the questions on the site.\nThis method allows you make fairly flexible queries across the entire corpus of questions on a site."
-  StackExchangelistUnansweredQuestions(
+  listUnansweredQuestions(
     fromdate: Int
     todate: Int
     min: Int
@@ -129,7 +124,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "listUnansweredQuestions")
   "Returns all users on a site.\n\nThis method returns a list of users.\n\nThe sorts accepted by this method operate on the following fields of the user object:\n\nreputation – reputation\ncreation – creation_date\nname – display_name\nmodified – last_modified_date\n\nreputation is the default sort.\n\nIt is possible to create moderately complex queries using sort, min, max, fromdate, and todate.\nThe `inname` parameter lets consumers filter the results down to just those users with a certain substring in their display name. For example, `inname=kevin` will return all users with both users named simply \"Kevin\" or those with Kevin as one of (or part of) their names; such as \"Kevin Montrose\"."
-  StackExchangelistUsers(
+  listUsers(
     inname: String
     fromdate: Int
     todate: Int
@@ -154,7 +149,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "listUsers")
   "Returns the user associated with the passed access_token.\n\nThis method returns a [user](https://api.stackexchange.com/docs/types/user)."
-  StackExchangegetMe(site: String! = "stackoverflow"): UsersResponse
+  getMe(site: String! = "stackoverflow"): UsersResponse
     @httpOperation(
       subgraph: "my-openapi"
       path: "/me"
@@ -168,7 +163,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "getMe")
   "Gets a subset of the reputation changes for users in {ids}.\nReputation changes are intentionally scrubbed of some data to make it difficult to correlate votes on particular posts with user reputation changes. That being said, this method returns enough data for reasonable display of reputation trends.\n{ids} can contain up to 100 semicolon delimited ids. To find ids programmatically look for user_id on user or shallow_user objects.\nThis method returns a list of reputation objects."
-  StackExchangegetUsersReputationChanges(
+  getUsersReputationChanges(
     userIds: String!
     fromdate: Int
     todate: Int
@@ -189,7 +184,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "getUsersReputationChanges")
   "Returns the reputation changed for the user associated with the given access_token.\nThis method returns a list of [reputation changes](https://api.stackexchange.com/docs/types/reputation)."
-  StackExchangegetMyReputation: ReputationResponse
+  getMyReputation: ReputationResponse
     @httpOperation(
       subgraph: "my-openapi"
       path: "/me/reputation"
@@ -199,7 +194,7 @@ type Query
     @resolver(subgraph: "my-openapi", operation: "query getMyReputation { getMyReputation }")
     @source(subgraph: "my-openapi", name: "getMyReputation")
   "Returns users' public reputation history.\nThis method returns a list of reputation_history."
-  StackExchangegetUsersReputationHistory(
+  getUsersReputationHistory(
     userIds: String!
     page: Int
     pagesize: Int
@@ -218,7 +213,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "getUsersReputationHistory")
   "Returns user's public reputation history.\n\nThis method returns a list of [reputation_history](https://api.stackexchange.com/docs/types/reputation-history)."
-  StackExchangegetMyReputationHistory(page: Int, pagesize: Int): ReputationHistoryResponse
+  getMyReputationHistory(page: Int, pagesize: Int): ReputationHistoryResponse
     @httpOperation(
       subgraph: "my-openapi"
       path: "/me/reputation-history"
@@ -232,7 +227,7 @@ type Query
     )
     @source(subgraph: "my-openapi", name: "getMyReputationHistory")
   "Returns a list of [answers](https://api.stackexchange.com/docs/types/answer)."
-  StackExchangelistAnswers(
+  listAnswers(
     "This parameter can be the full domain name (ie. \"stackoverflow.com\"), or a short form identified by api_site_parameter on the site object."
     site: String
     "Unix epoch time"
@@ -506,6 +501,14 @@ enum queryInput_listAnswers_order
   @source(subgraph: "my-openapi", name: "queryInput_listAnswers_order") {
   desc @source(subgraph: "my-openapi", name: "desc")
   asc @source(subgraph: "my-openapi", name: "asc")
+}
+
+input HandlerOptions @source(subgraph: "my-openapi", name: "HandlerOptions") {
+  subgraph: String @source(subgraph: "my-openapi", name: "subgraph")
+  endpoint: String @source(subgraph: "my-openapi", name: "endpoint")
+  operationHeaders: ObjMap @source(subgraph: "my-openapi", name: "operationHeaders")
+  queryStringOptions: ObjMap @source(subgraph: "my-openapi", name: "queryStringOptions")
+  queryParams: ObjMap @source(subgraph: "my-openapi", name: "queryParams")
 }
 
 scalar ObjMap @source(subgraph: "my-openapi", name: "ObjMap")

@@ -50,6 +50,7 @@
     "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0"
   },
   "dependencies": {
+    "@envelop/core": "^5.0.0",
     "@graphql-mesh/fusion-execution": "^0.0.0",
     "@graphql-tools/executor-http": "^1.0.3",
     "@graphql-tools/utils": "^10.0.8",

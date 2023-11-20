@@ -273,9 +273,14 @@ export function visitFieldNodeForTypeResolvers(
   const resolverDependencyFieldMap = new Map<string, ResolverOperationNode[]>();
   for (const subFieldNodeIndex in fieldNode.selectionSet.selections) {
     let subFieldNode = fieldNode.selectionSet.selections[subFieldNodeIndex] as FlattenedFieldNode;
-    const fieldDefInType = typeFieldMap[subFieldNode.name.value];
+    const fieldNameInNode = subFieldNode.name.value;
+    if (fieldNameInNode === '__typename') {
+      newFieldSelectionSet.selections.push(subFieldNode);
+      continue;
+    }
+    const fieldDefInType = typeFieldMap[fieldNameInNode];
     if (!fieldDefInType) {
-      throw new Error(`No field definition found for ${subFieldNode.name.value}`);
+      throw new Error(`No field definition found for ${fieldNameInNode}`);
     }
     const fieldDirectives = getDefDirectives(fieldDefInType.astNode);
     const sourceDirectives = fieldDirectives.filter(d => d.name === 'source');

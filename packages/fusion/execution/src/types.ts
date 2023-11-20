@@ -35,6 +35,7 @@ export type ResolverKind = 'FETCH' | 'BATCH' | 'SUBSCRIBE';
 export interface ResolverVariableConfig {
   name: string;
   select?: string;
+  value?: string;
   subgraph: string;
 }
 

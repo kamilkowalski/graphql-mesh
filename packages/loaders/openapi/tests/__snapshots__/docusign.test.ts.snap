@@ -6,13 +6,11 @@ exports[`Docusign should generate correct schema: docusign-schema 1`] = `
   mutation: Mutation
 }
 
-directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "test", endpoint: "https://www.docusign.net/restapi") @handler(subgraph: "test", name: "openapi") {
+type Query @handler(subgraph: "test", name: "openapi", options: {endpoint: "https://www.docusign.net/restapi"}) {
   "Retrieves the available REST API versions.\\n\\nDocuSign Production system: https://www.docusign.net/restapi/service_information\\nDocuSign Demo system: https://demo.docusign.net/restapi/service_information\\n\\nYou do not need an integrator key to view the REST API versions and resources."
   ServiceInformation_GetServiceInformation: Services @httpOperation(subgraph: "test", path: "/service_information", operationSpecificHeaders: "{\\"Content-Type\\":\\"\\"}", httpMethod: GET)
   "Retrieves the base resources available for the DocuSign REST APIs.\\n\\nYou do not need an integrator key to view the REST API versions and resources.\\n\\nExample: https://demo.docusign.net/restapi/v2 lists all of the base resources available in version 2 of the REST API on the DocuSign Demo system.\\n\\nTo view descriptions and samples of the service operations for all versions, remove the version number and add /help to the URL.\\n\\nExample: https://demo.docusign.net/restapi/help lists the REST API operations on the DocuSign Demo system with XML and JSON request and response samples."
@@ -13910,6 +13908,14 @@ type oauthAccess {
   "Must be set to \\"api\\"."
   scope: String
   token_type: String
+}
+
+input HandlerOptions {
+  subgraph: String
+  endpoint: String
+  operationHeaders: ObjMap
+  queryStringOptions: ObjMap
+  queryParams: ObjMap
 }
 
 scalar ObjMap

@@ -2,10 +2,9 @@
 import cluster from 'cluster';
 import { availableParallelism } from 'os';
 import { join } from 'path';
-import { createYoga } from 'graphql-yoga';
 import Spinnies from 'spinnies';
 import { App, SSLApp } from 'uWebSockets.js';
-import { useSupergraph } from '@graphql-mesh/fusion-runtime';
+import { createMeshHTTPHandler } from '@graphql-mesh/http-handler';
 import { GitLoader } from '@graphql-tools/git-loader';
 import { GithubLoader } from '@graphql-tools/github-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
@@ -83,65 +82,34 @@ export async function runServeCLI(
   const meshServeCLIConfig = loadedConfig.config;
   const port = meshServeCLIConfig.port || 4000;
   const host = meshServeCLIConfig.host || 'localhost';
-  spinnies.add('yoga', { text: `${prefix} - Processing Supergraph` });
-  const yoga = createYoga({
-    plugins: [
-      ...(meshServeCLIConfig.plugins || []),
-      useSupergraph({
-        async getSupergraph() {
-          spinnies.add('supergraph', { text: `${prefix} - Loading supergraph schema` });
-          const loadedSupergraphSchema = await loadSchema(meshServeCLIConfig.supergraph, {
-            loaders: [
-              new GraphQLFileLoader(),
-              new UrlLoader(),
-              new GitLoader(),
-              new GithubLoader(),
-            ],
-            assumeValid: true,
-            assumeValidSDL: true,
+  const httpHandler = createMeshHTTPHandler({
+    ...meshServeCLIConfig,
+    supergraph() {
+      spinnies.add('supergraph', {
+        text: `${prefix} - Loading Supergraph from ${meshServeCLIConfig.supergraph}`,
+      });
+      return loadSchema(meshServeCLIConfig.supergraph, {
+        loaders: [new GraphQLFileLoader(), new UrlLoader(), new GithubLoader(), new GitLoader()],
+        assumeValid: true,
+        assumeValidSDL: true,
+      })
+        .then(supergraph => {
+          spinnies.succeed('supergraph', {
+            text: `${prefix} - Loaded Supergraph from ${meshServeCLIConfig.supergraph}`,
           });
-          spinnies.succeed('supergraph', { text: `${prefix} - Loaded supergraph schema` });
-          return loadedSupergraphSchema;
-        },
-        async getExecutorFromHandler(handlerName, handlerOptions, getSubgraph) {
-          const omnigraphPackageName = `@omnigraph/${handlerName}`;
-          spinnies.add(omnigraphPackageName, {
-            text: `${prefix} - Loading ${omnigraphPackageName}`,
+          return supergraph;
+        })
+        .catch(e => {
+          spinnies.fail('supergraph', {
+            text: `${prefix} - Failed to load Supergraph from ${meshServeCLIConfig.supergraph}`,
           });
-          try {
-            const omnigraphPackage = await import(omnigraphPackageName);
-            const getSubgraphExecutor = omnigraphPackage.getSubgraphExecutor;
-            if (!getSubgraphExecutor) {
-              spinnies.fail(omnigraphPackageName, {
-                text: `${prefix} - getSubgraphExecutor is not exported from ${omnigraphPackageName}`,
-              });
-              throw new Error(`getSubgraphExecutor is not exported from ${omnigraphPackageName}`);
-            }
-            spinnies.succeed(omnigraphPackageName, {
-              text: `${prefix} - Loaded ${omnigraphPackageName}`,
-            });
-            return getSubgraphExecutor({
-              getSubgraph,
-              options: handlerOptions,
-            });
-          } catch (error) {
-            spinnies.fail(omnigraphPackageName, {
-              text: `${prefix} - Failed to load ${omnigraphPackageName}`,
-            });
-            throw error;
-          }
-        },
-        polling: meshServeCLIConfig.polling,
-      }),
-    ],
-    cors: meshServeCLIConfig.cors,
-    graphiql: meshServeCLIConfig.graphiql,
-    batching: meshServeCLIConfig.batching,
+          throw e;
+        });
+    },
   });
-  spinnies.succeed('yoga', { text: `${prefix} - Processed Supergraph` });
   const app = meshServeCLIConfig.sslCredentials ? SSLApp(meshServeCLIConfig.sslCredentials) : App();
   const protocol = meshServeCLIConfig.sslCredentials ? 'https' : 'http';
-  app.any('/*', yoga);
+  app.any('/*', httpHandler);
   spinnies.add('start-server', { text: `${prefix} - Starting server` });
   app.listen(host, port, function listenCallback(listenSocket) {
     if (listenSocket) {

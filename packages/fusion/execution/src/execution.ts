@@ -103,18 +103,18 @@ export function createExecutableResolverOperationNode(
 
 export function createExecutableResolverOperationNodesWithDependencyMap(
   resolverOperationNodes: ResolverOperationNode[],
-  resolverDependencyMap: Map<string, ResolverOperationNode[]>,
+  resolverDependencyFieldMap: Map<string, ResolverOperationNode[]>,
 ) {
   const newResolverOperationNodes = resolverOperationNodes.map(
     createExecutableResolverOperationNode,
   );
   const newResolverDependencyMap = new Map<string, ExecutableResolverOperationNode[]>();
-  for (const [key, nodes] of resolverDependencyMap) {
+  for (const [key, nodes] of resolverDependencyFieldMap) {
     newResolverDependencyMap.set(key, nodes.map(createExecutableResolverOperationNode));
   }
   return {
-    newResolverOperationNodes,
-    newResolverDependencyMap,
+    resolverOperationNodes: newResolverOperationNodes,
+    resolverDependencyFieldMap: newResolverDependencyMap,
   };
 }
 

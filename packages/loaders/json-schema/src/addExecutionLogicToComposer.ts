@@ -15,8 +15,7 @@ import { IStringifyOptions } from 'qs';
 import { process } from '@graphql-mesh/cross-helpers';
 import { Logger } from '@graphql-mesh/types';
 import {
-  GlobalOptionsDirective,
-  handlerDirective,
+  HandlerDirective,
   HTTPOperationDirective,
   LinkDirective,
   LinkResolverDirective,
@@ -68,26 +67,19 @@ export async function addExecutionDirectivesToComposer(
     handlerName,
   }: AddExecutionLogicToComposerOptions,
 ) {
-  schemaComposer.addDirective(GlobalOptionsDirective);
-  schemaComposer.Query.setDirectiveByName(
-    'globalOptions',
-    JSON.parse(
-      JSON.stringify({
-        subgraph: subgraphName,
-        endpoint,
-        operationHeaders,
-        queryStringOptions,
-        queryParams,
-      }),
-    ),
-  );
-  schemaComposer.addDirective(handlerDirective);
+  schemaComposer.addDirective(HandlerDirective);
   schemaComposer.Query.setDirectiveByName(
     'handler',
     JSON.parse(
       JSON.stringify({
         subgraph: subgraphName,
         name: handlerName,
+        options: {
+          endpoint,
+          operationHeaders,
+          queryStringOptions,
+          queryParams,
+        },
       }),
     ),
   );

@@ -18,13 +18,11 @@ directive @resolveRoot(subgraph: String) on FIELD_DEFINITION
 
 directive @statusCodeTypeName(subgraph: String, typeName: String, statusCode: ID) repeatable on UNION
 
-directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "test", endpoint: "http://dummy") @handler(subgraph: "test", name: "openapi") {
+type Query @handler(subgraph: "test", name: "openapi", options: {endpoint: "http://dummy"}) {
   "### Fetch results of multiple async queries\\n\\nReturns the results of multiple async queries in one request.\\n\\nFor Query Tasks that are not completed, the response will include the execution status of the Query Task but will not include query results.\\nQuery Tasks whose results have expired will have a status of 'expired'.\\nIf the user making the API request does not have sufficient privileges to view a Query Task result, the result will have a status of 'missing'\\n"
   query_task_multi_results(
     "List of Query Task IDs"
@@ -10709,6 +10707,14 @@ input WhitelabelConfiguration_Input {
 }
 
 scalar ObjMap
+
+input HandlerOptions {
+  subgraph: String
+  endpoint: String
+  operationHeaders: ObjMap
+  queryStringOptions: ObjMap
+  queryParams: ObjMap
+}
 
 enum HTTPMethod {
   GET

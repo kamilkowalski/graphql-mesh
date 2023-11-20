@@ -8,9 +8,7 @@ exports[`example_api6 should generate the schema correctly 1`] = `
 
 directive @oneOf on OBJECT | INTERFACE | INPUT_OBJECT
 
-directive @globalOptions(subgraph: String, endpoint: String, operationHeaders: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
-
-directive @handler(subgraph: String, name: String, options: ObjMap) on OBJECT
+directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
 
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
@@ -18,7 +16,7 @@ directive @linkResolver(subgraph: String, linkResolverMap: ObjMap) on FIELD_DEFI
 
 directive @link(defaultRootType: String, defaultField: String) on FIELD_DEFINITION
 
-type Query @globalOptions(subgraph: "example_api6", endpoint: "http://localhost:3000/api") @handler(subgraph: "example_api6", name: "openapi") {
+type Query @handler(subgraph: "example_api6", name: "openapi", options: {endpoint: "http://localhost:3000/api"}) {
   "An arbitrary object"
   object: object_200_response @httpOperation(subgraph: "example_api6", path: "/object", operationSpecificHeaders: "{\\"accept\\":\\"application/json\\"}", httpMethod: GET) @linkResolver(subgraph: "example_api6", linkResolverMap: "{\\"object2Link\\":{\\"targetTypeName\\":\\"Query\\",\\"targetFieldName\\":\\"getObject2\\"}}")
   "Serves as a link of GET /object"
@@ -137,6 +135,14 @@ input mutationInput_post_inputUnion_input_oneOf_0_Input {
 
 input mutationInput_post_inputUnion_input_oneOf_1_Input {
   catBreed: String
+}
+
+input HandlerOptions {
+  subgraph: String
+  endpoint: String
+  operationHeaders: ObjMap
+  queryStringOptions: ObjMap
+  queryParams: ObjMap
 }
 
 scalar ObjMap
