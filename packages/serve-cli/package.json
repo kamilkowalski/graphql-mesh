@@ -35,7 +35,13 @@
   },
   "typings": "dist/typings/index.d.ts",
   "peerDependencies": {
+    "@parcel/watcher": "^2.1.0",
     "graphql": "*"
+  },
+  "peerDependenciesMeta": {
+    "@parcel/watcher": {
+      "optional": true
+    }
   },
   "dependencies": {
     "@graphql-mesh/fusion-runtime": "^0.0.0",
@@ -52,6 +58,7 @@
     "uWebSockets.js": "uNetworking/uWebSockets.js#semver:^20"
   },
   "devDependencies": {
+    "@parcel/watcher": "^2.3.0",
     "@types/spinnies": "^0.5.3"
   },
   "publishConfig": {

@@ -212,7 +212,9 @@ function getExecuteFnFromExecutor(executor: Executor): typeof execute {
   };
 }
 
-export function useSupergraph(opts: YogaSupergraphPluginOptions): Plugin {
+export function useSupergraph(
+  opts: YogaSupergraphPluginOptions,
+): Plugin & { invalidateSupergraph(): void } {
   let supergraph: GraphQLSchema;
   let executeFn: typeof execute;
   let plugins: SupergraphPlugin[];
@@ -270,6 +272,9 @@ export function useSupergraph(opts: YogaSupergraphPluginOptions): Plugin {
         return;
       }
       setExecuteFn(executeFn);
+    },
+    invalidateSupergraph() {
+      return getAndSetSupergraph();
     },
   };
 }

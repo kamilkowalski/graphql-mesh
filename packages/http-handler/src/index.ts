@@ -9,6 +9,7 @@ import {
   createYoga,
   FetchAPI,
   YogaLogger,
+  YogaServerInstance,
   YogaServerOptions,
   type BatchingOptions,
   type Plugin,
@@ -19,6 +20,8 @@ import { useSupergraph, type SupergraphPlugin } from '@graphql-mesh/fusion-runti
 import { Logger } from '@graphql-mesh/types';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { DefaultLogger, getHeadersObj } from '@graphql-mesh/utils';
+import { getStitchedSchemaFromSupergraphSdl } from '@graphql-tools/federation';
+import { getDocumentNodeFromSchema } from '@graphql-tools/utils';
 import { isPromise } from '@whatwg-node/server';
 import type { CORSPluginOptions } from '@whatwg-node/server/typings/plugins/useCors';
 
@@ -33,6 +36,12 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
     | DocumentNode
     | GraphQLSchema
     | (() => Promise<string | DocumentNode | GraphQLSchema>);
+  /**
+   * Supergraph spec
+   *
+   * @default 'fusion'
+   */
+  spec?: 'federation' | 'fusion';
   /**
    * Headers to be sent to the Supergraph Schema endpoint
    */
@@ -73,7 +82,7 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
 
 export function createMeshHTTPHandler<TServerContext>(
   config: MeshHTTPHandlerConfiguration<TServerContext>,
-) {
+): YogaServerInstance<TServerContext, {}> & { invalidateSupergraph(): void } {
   let handlerImportFn: (handlerName: string) => Promise<any> | any;
   if (config.handlers != null) {
     if (typeof config.handlers === 'function') {
@@ -95,66 +104,110 @@ export function createMeshHTTPHandler<TServerContext>(
     return import(omnigraphPackageName);
   }
 
+  const supergraphSpec = config.spec || 'fusion';
+
+  let supergraphYogaPlugin: Plugin<TServerContext> & { invalidateSupergraph: () => void };
+
+  if (supergraphSpec === 'fusion') {
+    supergraphYogaPlugin = useSupergraph({
+      getSupergraph() {
+        if (typeof config.supergraph === 'function') {
+          return config.supergraph();
+        }
+        if (isSchema(config.supergraph)) {
+          return config.supergraph;
+        }
+        if (typeof config.supergraph === 'string') {
+          let url = config.supergraph;
+          if (url.startsWith('.')) {
+            url = `file:///${url}`;
+          }
+          yoga.logger.info(`Fetching Supergraph from ${url}`);
+          return fetchAPI
+            .fetch(config.supergraph, {
+              headers: config.schemaHeaders,
+            })
+            .then(res => res.text())
+            .then(schemaString =>
+              buildSchema(schemaString, {
+                assumeValid: true,
+                assumeValidSDL: true,
+                noLocation: true,
+              }),
+            );
+        }
+        return buildASTSchema(config.supergraph, {
+          assumeValid: true,
+          assumeValidSDL: true,
+        });
+      },
+      getExecutorFromHandler(handlerName, handlerOptions, getSubgraph) {
+        function handleImportResult(importRes: any) {
+          const getSubgraphExecutor = importRes.getSubgraphExecutor;
+          if (!getSubgraphExecutor) {
+            logger.error(`getSubgraphExecutor is not exported from the handler: ${handlerName}`);
+            throw new Error(`getSubgraphExecutor is not exported from the handler: ${handlerName}`);
+          }
+          return getSubgraphExecutor({
+            getSubgraph,
+            options: handlerOptions,
+          });
+        }
+        const importRes$ = handlerImportFn(handlerName);
+        if (isPromise(importRes$)) {
+          return importRes$.then(handleImportResult);
+        }
+        return handleImportResult(importRes$);
+      },
+      polling: config.polling,
+    });
+  } else if (supergraphSpec === 'federation') {
+    let supergraph: GraphQLSchema;
+    // eslint-disable-next-line no-inner-declarations
+    function getAndSetSupergraph(): Promise<void> | void {
+      function handleSupergraphInput(supergraphSdl: DocumentNode | string | GraphQLSchema) {
+        supergraph = getStitchedSchemaFromSupergraphSdl({
+          supergraphSdl: isSchema(supergraphSdl)
+            ? getDocumentNodeFromSchema(supergraphSdl)
+            : supergraphSdl,
+        });
+      }
+      if (typeof config.supergraph === 'function') {
+        const supergraph$ = config.supergraph();
+        if (isPromise(supergraph$)) {
+          return supergraph$.then(handleSupergraphInput);
+        }
+        return handleSupergraphInput(supergraph$);
+      }
+      if (isPromise(config.supergraph)) {
+        return config.supergraph.then(handleSupergraphInput);
+      }
+
+      return handleSupergraphInput(config.supergraph);
+    }
+    let initialSupergraph$: Promise<void> | void;
+    supergraphYogaPlugin = {
+      onRequestParse() {
+        return {
+          onRequestParseDone() {
+            initialSupergraph$ ||= getAndSetSupergraph();
+            return initialSupergraph$;
+          },
+        };
+      },
+      onEnveloped({ setSchema }: { setSchema: (schema: GraphQLSchema) => void }) {
+        setSchema(supergraph);
+      },
+      invalidateSupergraph() {
+        return getAndSetSupergraph();
+      },
+    };
+  }
+
   const yoga = createYoga<TServerContext>({
     fetchAPI: config.fetchAPI,
     logging: config.logging == null ? new DefaultLogger() : config.logging,
-    plugins: [
-      ...(config.plugins || []),
-      useSupergraph({
-        getSupergraph() {
-          if (typeof config.supergraph === 'function') {
-            return config.supergraph();
-          }
-          if (isSchema(config.supergraph)) {
-            return config.supergraph;
-          }
-          if (typeof config.supergraph === 'string') {
-            let url = config.supergraph;
-            if (url.startsWith('.')) {
-              url = `file:///${url}`;
-            }
-            yoga.logger.info(`Fetching Supergraph from ${url}`);
-            return fetchAPI
-              .fetch(config.supergraph, {
-                headers: config.schemaHeaders,
-              })
-              .then(res => res.text())
-              .then(schemaString =>
-                buildSchema(schemaString, {
-                  assumeValid: true,
-                  assumeValidSDL: true,
-                  noLocation: true,
-                }),
-              );
-          }
-          return buildASTSchema(config.supergraph, {
-            assumeValid: true,
-            assumeValidSDL: true,
-          });
-        },
-        getExecutorFromHandler(handlerName, handlerOptions, getSubgraph) {
-          function handleImportResult(importRes: any) {
-            const getSubgraphExecutor = importRes.getSubgraphExecutor;
-            if (!getSubgraphExecutor) {
-              logger.error(`getSubgraphExecutor is not exported from the handler: ${handlerName}`);
-              throw new Error(
-                `getSubgraphExecutor is not exported from the handler: ${handlerName}`,
-              );
-            }
-            return getSubgraphExecutor({
-              getSubgraph,
-              options: handlerOptions,
-            });
-          }
-          const importRes$ = handlerImportFn(handlerName);
-          if (isPromise(importRes$)) {
-            return importRes$.then(handleImportResult);
-          }
-          return handleImportResult(importRes$);
-        },
-        polling: config.polling,
-      }),
-    ],
+    plugins: [...(config.plugins || []), supergraphYogaPlugin],
     context({ request, req, connectionParams }: any) {
       // Maybe Node-like environment
       if (req?.headers) {
@@ -184,5 +237,10 @@ export function createMeshHTTPHandler<TServerContext>(
   fetchAPI ||= yoga.fetchAPI;
   logger = yoga.logger;
 
-  return yoga;
+  Object.defineProperty(yoga, 'invalidateSupergraph', {
+    value: supergraphYogaPlugin.invalidateSupergraph,
+    configurable: true,
+  });
+
+  return yoga as any;
 }

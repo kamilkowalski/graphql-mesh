@@ -1,7 +1,7 @@
 /* eslint-disable import/no-nodejs-modules */
 import cluster from 'cluster';
 import { availableParallelism } from 'os';
-import { join } from 'path';
+import { dirname, isAbsolute, join } from 'path';
 import Spinnies from 'spinnies';
 import { App, SSLApp } from 'uWebSockets.js';
 import { createMeshHTTPHandler } from '@graphql-mesh/http-handler';
@@ -85,6 +85,7 @@ export async function runServeCLI(
   });
   const port = meshServeCLIConfig.port || 4000;
   const host = meshServeCLIConfig.host || 'localhost';
+  const supergraphPath = meshServeCLIConfig.supergraph || './supergraph.graphql';
   const httpHandler = createMeshHTTPHandler({
     ...meshServeCLIConfig,
     supergraph() {
@@ -110,6 +111,41 @@ export async function runServeCLI(
         });
     },
   });
+  if (typeof supergraphPath === 'string' && !supergraphPath.includes('://')) {
+    const parcelWatcher$ = import('@parcel/watcher');
+    parcelWatcher$
+      .catch(e => {
+        httpHandler.logger.error(
+          `If you want to enable hot reloading on ${supergraphPath}, install "@parcel/watcher"`,
+          e,
+        );
+      })
+      .then(parcelWatcher => {
+        if (parcelWatcher) {
+          const absoluteSupergraphPath = isAbsolute(supergraphPath)
+            ? supergraphPath
+            : join(process.cwd(), supergraphPath);
+          httpHandler.logger.info(`Watching ${absoluteSupergraphPath} for changes`);
+          return parcelWatcher
+            .subscribe(dirname(absoluteSupergraphPath), () => {
+              httpHandler.logger.info(`Supergraph ${absoluteSupergraphPath} changed`);
+              httpHandler.invalidateSupergraph();
+            })
+            .then(subscription => {
+              registerTerminateHandler(eventName => {
+                httpHandler.logger.info(
+                  `Closing watcher for ${absoluteSupergraphPath} for ${eventName}`,
+                );
+                return subscription.unsubscribe();
+              });
+            });
+        }
+        return null;
+      })
+      .catch(e => {
+        httpHandler.logger.error(`Failed to watch ${supergraphPath}`, e);
+      });
+  }
   const app = meshServeCLIConfig.sslCredentials ? SSLApp(meshServeCLIConfig.sslCredentials) : App();
   const protocol = meshServeCLIConfig.sslCredentials ? 'https' : 'http';
   app.any('/*', httpHandler);
