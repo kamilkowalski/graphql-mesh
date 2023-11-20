@@ -14,16 +14,6 @@ export function extractSubgraphFromSupergraph(subgraph: string, supergraph: Grap
       ) {
         return null;
       }
-      const nameArgument = node.arguments?.find(argument => argument.name.value === 'name');
-      if (nameArgument?.value.kind === Kind.STRING) {
-        return {
-          ...node,
-          name: {
-            ...node.name,
-            value: nameArgument.value.value,
-          },
-        };
-      }
       return node;
     },
     ObjectTypeDefinition: {
@@ -67,6 +57,18 @@ function createFilterNodeBySubgraph(subgraph: string) {
         subgraphArgument.value.value !== subgraph
       ) {
         return null;
+      }
+      const nameArgument = sourceDirective.arguments?.find(
+        argument => argument.name.value === 'name',
+      );
+      if (nameArgument?.value.kind === Kind.STRING) {
+        return {
+          ...node,
+          name: {
+            kind: Kind.NAME,
+            value: nameArgument.value.value,
+          },
+        };
       }
     }
     return node;

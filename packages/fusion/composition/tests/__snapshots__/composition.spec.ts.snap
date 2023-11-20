@@ -6,8 +6,8 @@ exports[`Composition composes basic schemas 1`] = `
 }
 
 type Query {
-  myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }")
-  foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }")
+  myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
+  foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
 }
 
 type Foo @source(subgraph: "B", name: "Foo") {
@@ -22,8 +22,8 @@ exports[`Composition composes with transforms on fields 1`] = `
 }
 
 type Query {
-  A_myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }")
-  B_foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }")
+  A_myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
+  B_foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
 }
 
 type Foo @source(subgraph: "B", name: "Foo") {
@@ -39,7 +39,7 @@ exports[`Composition composes with transforms on types 1`] = `
 }
 
 type A_Query {
-  myFoo: A_Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }")
+  myFoo: A_Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
 }
 
 type A_Foo @source(subgraph: "A", name: "Foo") {
@@ -47,7 +47,7 @@ type A_Foo @source(subgraph: "A", name: "Foo") {
 }
 
 type B_Query {
-  foo(id: ID!): B_Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }")
+  foo(id: ID!): B_Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
 }
 
 type B_Foo @source(subgraph: "B", name: "Foo") {
@@ -64,9 +64,9 @@ exports[`Composition keeps the directives 1`] = `
 directive @foo on FIELD_DEFINITION
 
 type Query {
-  myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }")
-  foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }")
-  cFoo: Foo! @foo @resolver(subgraph: "C", operation: "query cFoo { cFoo }")
+  myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
+  foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
+  cFoo: Foo! @foo @resolver(subgraph: "C", operation: "query cFoo { cFoo }") @source(subgraph: "C", name: "cFoo")
 }
 
 type Foo @source(subgraph: "C", name: "Foo") {

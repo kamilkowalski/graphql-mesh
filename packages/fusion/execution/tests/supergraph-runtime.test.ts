@@ -1,7 +1,8 @@
 import { buildSchema, DocumentNode, getOperationAST, GraphQLObjectType, Kind } from 'graphql';
 import { createDefaultExecutor } from '@graphql-tools/delegate';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import { ExecutionRequest } from '@graphql-tools/utils';
+import { printSchemaWithDirectives } from '@graphql-tools/utils';
+import { extractSubgraphFromSupergraph } from '../src/extractSubgraph.js';
 import { FlattenedFieldNode, FlattenedSelectionSet } from '../src/flattenSelections.js';
 import { executeOperation, planOperation } from '../src/operations.js';
 import { parseAndCache, printCached } from '../src/parseAndPrintWithCache.js';
@@ -602,6 +603,8 @@ describe('Execution', () => {
       foos: [Foo!]! @resolver(operation: "query FoosFromA { foos }", subgraph: "A")
       foo(id: ID!): Foo!
         @resolver(operation: "query FooFromB($id: ID!) { foo(id: $id) }", subgraph: "B")
+      fooById(id: ID!): Foo!
+        @resolver(operation: "query FooFromC($id: ID!) { foo(id: $id) }", subgraph: "C")
     }
   `;
 
@@ -1046,5 +1049,72 @@ describe('Execution', () => {
         baz: 'C_BAZ_FOR_1',
       },
     });
+  });
+  it('works with renames', async () => {
+    const operationInText = /* GraphQL */ `
+      query Test {
+        fooById(id: 1) {
+          id
+          baz
+        }
+      }
+    `;
+    const operationDoc = parseAndCache(operationInText);
+
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+      operationName: 'Test',
+    });
+
+    expect(result.exported).toMatchObject({
+      fooById: {
+        id: '1',
+        baz: 'C_BAZ_FOR_1',
+      },
+    });
+  });
+});
+
+describe('extractSubgraph', () => {
+  it('works', () => {
+    const supergraph = buildSchema(
+      /* GraphQL */ `
+        type Query {
+          foo: Foo! @source(subgraph: "A")
+        }
+
+        type Foo @source(subgraph: "A") @source(subgraph: "B") @source(subgraph: "C") {
+          id: ID! @source(subgraph: "A") @source(subgraph: "B") @source(subgraph: "C")
+          name: String! @source(subgraph: "A", name: "fooName")
+          bar: String! @source(subgraph: "B")
+          baz: String! @source(subgraph: "C")
+        }
+      `,
+      {
+        assumeValid: true,
+        assumeValidSDL: true,
+      },
+    );
+
+    const aSubgraph = extractSubgraphFromSupergraph('A', supergraph);
+
+    expect(printSchemaWithDirectives(aSubgraph)).toBe(
+      /* GraphQL */ `
+schema {
+  query: Query
+}
+
+type Query {
+  foo: Foo! @source(subgraph: "A")
+}
+
+type Foo @source(subgraph: "A") {
+  id: ID! @source(subgraph: "A")
+  fooName: String! @source(subgraph: "A", name: "fooName")
+}
+    `.trim(),
+    );
   });
 });
