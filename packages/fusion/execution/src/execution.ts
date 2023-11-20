@@ -9,6 +9,7 @@ export type OnExecuteFn = (
   subgraphName: string,
   document: DocumentNode,
   variables: Record<string, any>,
+  context: any,
 ) => ReturnType<Executor>;
 
 export interface ExecutableResolverOperationNode extends ResolverOperationNode {
@@ -161,19 +162,32 @@ export function createResolverOperationNodeFromExecutable(
   return resolverOpNode;
 }
 
-export function executeResolverOperationNodesWithDependenciesInParallel(
-  resolverOperationNodes: ExecutableResolverOperationNode[],
-  fieldDependencyMap: Map<string, ExecutableResolverOperationNode[]>,
-  inputVariableMap: Map<string, any>,
-  onExecute: OnExecuteFn,
-  obj: any = {},
-) {
+export function executeResolverOperationNodesWithDependenciesInParallel({
+  resolverOperationNodes,
+  fieldDependencyMap,
+  inputVariableMap,
+  onExecute,
+  obj = {},
+  context,
+}: {
+  context: any;
+  resolverOperationNodes: ExecutableResolverOperationNode[];
+  fieldDependencyMap: Map<string, ExecutableResolverOperationNode[]>;
+  inputVariableMap: Map<string, any>;
+  onExecute: OnExecuteFn;
+  obj?: any;
+}) {
   const dependencyPromises: PromiseLike<any>[] = [];
 
   const outputVariableMap = new Map();
 
   for (const depOp of resolverOperationNodes) {
-    const depOpResult$ = executeResolverOperationNode(depOp, inputVariableMap, onExecute);
+    const depOpResult$ = executeResolverOperationNode({
+      resolverOperationNode: depOp,
+      inputVariableMap,
+      onExecute,
+      context,
+    });
     function handleDepOpResult(depOpResult: {
       exported: any;
       outputVariableMap: Map<string, any>;
@@ -195,11 +209,12 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
     const fieldOpResults: any[] = [];
     let listed = false;
     for (const fieldOperationNode of fieldOperationNodes) {
-      const fieldOpResult$ = executeResolverOperationNode(
-        fieldOperationNode,
+      const fieldOpResult$ = executeResolverOperationNode({
+        resolverOperationNode: fieldOperationNode,
         inputVariableMap,
         onExecute,
-      );
+        context,
+      });
       function handleFieldOpResult(fieldOpResult: { exported: any; listed?: boolean }) {
         if (fieldOpResult.listed) {
           listed = true;
@@ -265,11 +280,17 @@ export function executeResolverOperationNodesWithDependenciesInParallel(
   return handleDependencyPromises();
 }
 
-export function executeResolverOperationNode(
-  resolverOperationNode: ExecutableResolverOperationNode,
-  inputVariableMap: Map<string, any>,
-  onExecute: OnExecuteFn,
-) {
+export function executeResolverOperationNode({
+  resolverOperationNode,
+  inputVariableMap,
+  onExecute,
+  context,
+}: {
+  resolverOperationNode: ExecutableResolverOperationNode;
+  inputVariableMap: Map<string, any>;
+  onExecute: OnExecuteFn;
+  context: any;
+}) {
   const variablesForOperation: Record<string, any> = {};
 
   for (const requiredVarName of resolverOperationNode.requiredVariableNames) {
@@ -283,11 +304,12 @@ export function executeResolverOperationNode(
         for (const [key, value] of inputVariableMap) {
           itemInputVariableMap.set(key, Array.isArray(value) ? value[varIndex] : value);
         }
-        const itemResult$ = executeResolverOperationNode(
+        const itemResult$ = executeResolverOperationNode({
           resolverOperationNode,
-          itemInputVariableMap,
+          inputVariableMap: itemInputVariableMap,
           onExecute,
-        );
+          context,
+        });
         if (isPromise(itemResult$)) {
           promises.push(
             itemResult$.then(resolvedVarValueItem => {
@@ -332,6 +354,7 @@ export function executeResolverOperationNode(
     resolverOperationNode.subgraph,
     resolverOperationNode.resolverOperationDocument,
     variablesForOperation,
+    context,
   );
 
   if (isAsyncIterable(result$)) {
@@ -355,13 +378,14 @@ export function executeResolverOperationNode(
         const value = arrayGet(exportedList, providedVariablePath);
         outputVariableMap.set(providedVariableName, value);
       }
-      return executeResolverOperationNodesWithDependenciesInParallel(
-        resolverOperationNode.batchedResolverDependencies,
-        resolverOperationNode.batchedResolverDependencyFieldMap,
-        outputVariableMap,
+      return executeResolverOperationNodesWithDependenciesInParallel({
+        resolverOperationNodes: resolverOperationNode.batchedResolverDependencies,
+        fieldDependencyMap: resolverOperationNode.batchedResolverDependencyFieldMap,
+        inputVariableMap: outputVariableMap,
         onExecute,
-        exportedList,
-      );
+        obj: exportedList,
+        context,
+      });
     }
     function handleExportedItem(exportedItem: any) {
       for (const [
@@ -371,13 +395,14 @@ export function executeResolverOperationNode(
         const value = arrayGet(exportedItem, providedVariablePath);
         outputVariableMap.set(providedVariableName, value);
       }
-      return executeResolverOperationNodesWithDependenciesInParallel(
-        resolverOperationNode.resolverDependencies,
-        resolverOperationNode.resolverDependencyFieldMap,
-        outputVariableMap,
+      return executeResolverOperationNodesWithDependenciesInParallel({
+        resolverOperationNodes: resolverOperationNode.resolverDependencies,
+        fieldDependencyMap: resolverOperationNode.resolverDependencyFieldMap,
+        inputVariableMap: outputVariableMap,
         onExecute,
-        exportedItem,
-      );
+        obj: exportedItem,
+        context,
+      });
     }
     let depsResult$: PromiseLike<any> | any;
     if (Array.isArray(exported)) {

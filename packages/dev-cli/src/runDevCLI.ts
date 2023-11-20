@@ -21,12 +21,13 @@ export async function runDevCLI(
   processExit = (exitCode: number) => process.exit(exitCode),
 ): Promise<void | never> {
   spinnies.add('main', { text: 'Starting Mesh Dev CLI' });
-  const meshDevCLIConfigFileName = process.env.MESH_DEV_CONFIG_FILE_NAME || 'mesh.dev.config.ts';
+  const meshDevCLIConfigFileName = process.env.MESH_DEV_CONFIG_FILE_NAME || 'mesh.config.ts';
   const meshDevCLIConfigFilePath =
     process.env.MESH_DEV_CONFIG_FILE_PATH || join(process.cwd(), meshDevCLIConfigFileName);
   spinnies.add('config', { text: `Loading Mesh Dev CLI Config from ${meshDevCLIConfigFilePath}` });
-  const loadedConfig: { config: MeshDevCLIConfig } = await import(meshDevCLIConfigFilePath);
-  if (!loadedConfig.config) {
+  const loadedConfig: { devConfig: MeshDevCLIConfig } = await import(meshDevCLIConfigFilePath);
+  const meshDevCLIConfig = loadedConfig.devConfig;
+  if (!meshDevCLIConfig) {
     spinnies.fail('config', {
       text: `Mesh Dev CLI Config was not found in ${meshDevCLIConfigFilePath}`,
     });
@@ -35,7 +36,6 @@ export async function runDevCLI(
   spinnies.succeed('config', {
     text: `Loaded Mesh Dev CLI Config from ${meshDevCLIConfigFilePath}`,
   });
-  const meshDevCLIConfig = loadedConfig.config;
   const subgraphConfigsForComposition: SubgraphConfig[] = await Promise.all(
     meshDevCLIConfig.subgraphs.map(async subgraphCLIConfig => {
       const { name: subgraphName, schema$ } = subgraphCLIConfig.sourceHandler;

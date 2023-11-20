@@ -62,7 +62,12 @@ export function getExecutorForSupergraph(
   const handlerOptsMap = getSubgraphHandlerMapFromSupergraph(supergraph);
   const executorMap: Record<string, Executor> = {};
   return function supergraphExecutor(execReq: ExecutionRequest) {
-    function onSubgraphExecute(subgraphName: string, document: DocumentNode, variables: any) {
+    function onSubgraphExecute(
+      subgraphName: string,
+      document: DocumentNode,
+      variables: any,
+      context: any,
+    ) {
       let executor: Executor = executorMap[subgraphName];
       if (executor == null) {
         const handlerOpts = handlerOptsMap[subgraphName];
@@ -120,7 +125,7 @@ export function getExecutorForSupergraph(
           return executor(subgraphExecReq);
         };
       }
-      return executor({ document, variables });
+      return executor({ document, variables, context });
     }
     const documentStr = getDocumentString(execReq.document);
     function handleCacheResult(cachedPlanRes: ExecutableOperationPlan) {
@@ -144,6 +149,7 @@ export function getExecutorForSupergraph(
         executablePlan: cachedPlanRes,
         onExecute: onSubgraphExecute,
         variables: execReq.variables,
+        context: execReq.context,
       });
       if (isPromise(opExecRes$)) {
         return opExecRes$.then(handleOpExecResult);

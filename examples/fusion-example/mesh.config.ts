@@ -1,7 +1,7 @@
 import type { MeshDevCLIConfig } from '@graphql-mesh/dev-cli';
 import { loadOpenAPISubgraph } from '@omnigraph/openapi';
 
-export const config: MeshDevCLIConfig = {
+export const devConfig: MeshDevCLIConfig = {
   subgraphs: [
     {
       sourceHandler: loadOpenAPISubgraph('my-openapi', {

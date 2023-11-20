@@ -85,34 +85,39 @@ export function executeOperation({
   document,
   operationName,
   variables = {},
+  context = {},
 }: {
   supergraph: GraphQLSchema;
   onExecute: OnExecuteFn;
   document: DocumentNode;
   operationName?: string;
   variables?: Record<string, any>;
+  context?: any;
 }) {
   const plan = planOperation(supergraph, document, operationName);
   const executablePlan = createExecutableResolverOperationNodesWithDependencyMap(
     plan.resolverOperationNodes,
     plan.resolverDependencyFieldMap,
   );
-  return executeOperationPlan({ executablePlan, onExecute, variables });
+  return executeOperationPlan({ executablePlan, onExecute, variables, context });
 }
 
 export function executeOperationPlan({
   executablePlan,
   onExecute,
   variables,
+  context,
 }: {
   executablePlan: ExecutableOperationPlan;
   onExecute: OnExecuteFn;
   variables?: Record<string, any>;
+  context: any;
 }) {
-  return executeResolverOperationNodesWithDependenciesInParallel(
-    executablePlan.resolverOperationNodes,
-    executablePlan.resolverDependencyFieldMap,
-    new Map(Object.entries(variables)),
+  return executeResolverOperationNodesWithDependenciesInParallel({
+    context,
+    resolverOperationNodes: executablePlan.resolverOperationNodes,
+    fieldDependencyMap: executablePlan.resolverDependencyFieldMap,
+    inputVariableMap: new Map(Object.entries(variables)),
     onExecute,
-  );
+  });
 }

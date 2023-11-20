@@ -61,25 +61,28 @@ export async function runServeCLI(
     }
   }
 
-  const meshServeCLIConfigFileName =
-    process.env.MESH_SERVE_CONFIG_FILE_NAME || 'mesh.serve.config.ts';
+  const meshServeCLIConfigFileName = process.env.MESH_SERVE_CONFIG_FILE_NAME || 'mesh.config.ts';
   const meshServeCLIConfigFilePath =
     process.env.MESH_SERVE_CONFIG_FILE_PATH || join(process.cwd(), meshServeCLIConfigFileName);
 
   spinnies.add('config', {
     text: `${prefix} - Loading configuration from ${meshServeCLIConfigFilePath}`,
   });
-  const loadedConfig: { config: MeshServeCLIConfig } = await import(meshServeCLIConfigFilePath);
-  if (!loadedConfig.config) {
+  const loadedConfig: { serveConfig: MeshServeCLIConfig } = await import(
+    meshServeCLIConfigFilePath
+  ).catch(e => {
     spinnies.fail('config', {
-      text: `${prefix} - Configuration file was not found in ${meshServeCLIConfigFilePath}`,
+      text: `${prefix} - Failed to load configuration from ${meshServeCLIConfigFilePath}`,
     });
+    console.error(e);
     return processExit(1);
-  }
+  });
+  const meshServeCLIConfig = loadedConfig.serveConfig || {
+    supergraph: './supergraph.graphql',
+  };
   spinnies.succeed('config', {
     text: `${prefix} - Loaded configuration from ${meshServeCLIConfigFilePath}`,
   });
-  const meshServeCLIConfig = loadedConfig.config;
   const port = meshServeCLIConfig.port || 4000;
   const host = meshServeCLIConfig.host || 'localhost';
   const httpHandler = createMeshHTTPHandler({
@@ -88,7 +91,7 @@ export async function runServeCLI(
       spinnies.add('supergraph', {
         text: `${prefix} - Loading Supergraph from ${meshServeCLIConfig.supergraph}`,
       });
-      return loadSchema(meshServeCLIConfig.supergraph, {
+      return loadSchema(meshServeCLIConfig.supergraph || './supergraph.graphql', {
         loaders: [new GraphQLFileLoader(), new UrlLoader(), new GithubLoader(), new GitLoader()],
         assumeValid: true,
         assumeValidSDL: true,

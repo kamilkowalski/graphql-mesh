@@ -234,7 +234,7 @@ export function processPubSubOperationAnnotations({
   pubsubTopic,
   logger,
 }: ProcessPubSubOperationAnnotationsOpts) {
-  field.subscribe = (root, args, context, info) => {
+  field.subscribe = function pubSubSubscribeFn(root, args, context, info) {
     const operationLogger = logger.child(`${info.parentType.name}.${field.name}`);
     const pubsub = context?.pubsub || globalPubsub;
     if (!pubsub) {
@@ -249,10 +249,12 @@ export function processPubSubOperationAnnotations({
       const expectedPath = new URL(expectedUrl, 'http://localhost').pathname;
       interpolatedPubSubTopic = `webhook:${expectedMethod}:${expectedPath}`;
     }
-    operationLogger.debug(`=> Subscribing to pubSubTopic: ${interpolatedPubSubTopic}`);
+    operationLogger.debug(
+      `${info.parentType.name}.${field.name} => Subscribing to pubSubTopic: ${interpolatedPubSubTopic}`,
+    );
     return pubsub.asyncIterator(interpolatedPubSubTopic);
   };
-  field.resolve = (root, args, context, info) => {
+  field.resolve = function pubSubResolver(root, args, context, info) {
     const operationLogger = logger.child(`${info.parentType.name}.${field.name}`);
     operationLogger.debug('Received ', root, ' from ', pubsubTopic);
     return root;

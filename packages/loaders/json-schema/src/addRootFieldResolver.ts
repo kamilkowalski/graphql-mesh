@@ -15,9 +15,9 @@ import urlJoin from 'url-join';
 import { process } from '@graphql-mesh/cross-helpers';
 import { stringInterpolator } from '@graphql-mesh/string-interpolation';
 import { Logger, MeshFetch, MeshFetchRequestInit } from '@graphql-mesh/types';
-import { DefaultLogger, getHeadersObj } from '@graphql-mesh/utils';
+import { getHeadersObj } from '@graphql-mesh/utils';
 import { createGraphQLError, memoize1 } from '@graphql-tools/utils';
-import { Blob, fetch, File, FormData } from '@whatwg-node/fetch';
+import { Blob, File, FormData } from '@whatwg-node/fetch';
 import { resolveDataByUnionInputType } from './resolveDataByUnionInputType.js';
 import { HTTPMethod } from './types.js';
 import { isFileUpload } from './utils.js';
@@ -59,8 +59,8 @@ export interface GlobalOptions {
 export function addHTTPRootFieldResolver(
   schema: GraphQLSchema,
   field: GraphQLField<any, any>,
-  logger: Logger = new DefaultLogger('Omnigraph'),
-  globalFetch: MeshFetch = fetch,
+  globalLogger: Logger,
+  globalFetch: MeshFetch,
   {
     path,
     operationSpecificHeaders,
@@ -85,6 +85,7 @@ export function addHTTPRootFieldResolver(
   };
   const returnNamedGraphQLType = getNamedType(field.type);
   field.resolve = async (root, args, context, info) => {
+    const logger = context.logger || globalLogger;
     const operationLogger = logger.child(`${info.parentType.name}.${info.fieldName}`);
     operationLogger.debug(`=> Resolving`);
     const interpolationData = { root, args, context, env: process.env };

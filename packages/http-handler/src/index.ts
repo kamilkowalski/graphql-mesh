@@ -15,6 +15,10 @@ import {
 } from 'graphql-yoga';
 import type { GraphiQLOptionsOrFactory } from 'graphql-yoga/typings/plugins/use-graphiql';
 import { useSupergraph, type SupergraphPlugin } from '@graphql-mesh/fusion-runtime';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { Logger } from '@graphql-mesh/types';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { DefaultLogger, getHeadersObj } from '@graphql-mesh/utils';
 import { isPromise } from '@whatwg-node/server';
 import type { CORSPluginOptions } from '@whatwg-node/server/typings/plugins/useCors';
 
@@ -24,7 +28,7 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
   /**
    * Path to the Supergraph Schema
    */
-  supergraph:
+  supergraph?:
     | string
     | DocumentNode
     | GraphQLSchema
@@ -64,7 +68,7 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
   /**
    * Logger
    */
-  logging?: YogaServerOptions<TServerContext, {}>['logging'];
+  logging?: YogaServerOptions<TServerContext, {}>['logging'] | Logger;
 }
 
 export function createMeshHTTPHandler<TServerContext>(
@@ -93,7 +97,7 @@ export function createMeshHTTPHandler<TServerContext>(
 
   const yoga = createYoga<TServerContext>({
     fetchAPI: config.fetchAPI,
-    logging: config.logging,
+    logging: config.logging == null ? new DefaultLogger() : config.logging,
     plugins: [
       ...(config.plugins || []),
       useSupergraph({
@@ -151,6 +155,27 @@ export function createMeshHTTPHandler<TServerContext>(
         polling: config.polling,
       }),
     ],
+    context({ request, req, connectionParams }: any) {
+      // Maybe Node-like environment
+      if (req?.headers) {
+        return {
+          fetch: fetchAPI.fetch,
+          logger,
+          headers: getHeadersObj(req.headers),
+          connectionParams,
+        };
+      }
+      // Fetch environment
+      if (request?.headers) {
+        return {
+          fetch: fetchAPI.fetch,
+          logger,
+          headers: getHeadersObj(request.headers),
+          connectionParams,
+        };
+      }
+      return {};
+    },
     cors: config.cors,
     graphiql: config.graphiql,
     batching: config.batching,
