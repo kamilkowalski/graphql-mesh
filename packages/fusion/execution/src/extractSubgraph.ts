@@ -46,30 +46,35 @@ function createFilterNodeBySubgraph(subgraph: string) {
   return function filterNodeBySubgraph(
     node: ASTNode & { directives?: readonly ConstDirectiveNode[] },
   ) {
-    const sourceDirective = node.directives?.find(directive => directive.name.value === 'source');
-    if (sourceDirective != null) {
+    const sourceDirectives = node.directives?.filter(
+      directive => directive.name.value === 'source',
+    );
+    for (const sourceDirective of sourceDirectives ?? []) {
       const subgraphArgument = sourceDirective.arguments?.find(
         argument => argument.name.value === 'subgraph',
       );
       if (
         subgraphArgument != null &&
         subgraphArgument.value.kind === Kind.STRING &&
-        subgraphArgument.value.value !== subgraph
+        subgraphArgument.value.value === subgraph
       ) {
-        return null;
+        const nameArgument = sourceDirective.arguments?.find(
+          argument => argument.name.value === 'name',
+        );
+        if (nameArgument?.value.kind === Kind.STRING) {
+          return {
+            ...node,
+            name: {
+              kind: Kind.NAME,
+              value: nameArgument.value.value,
+            },
+          };
+        }
+        return node;
       }
-      const nameArgument = sourceDirective.arguments?.find(
-        argument => argument.name.value === 'name',
-      );
-      if (nameArgument?.value.kind === Kind.STRING) {
-        return {
-          ...node,
-          name: {
-            kind: Kind.NAME,
-            value: nameArgument.value.value,
-          },
-        };
-      }
+    }
+    if (sourceDirectives.length > 0) {
+      return null;
     }
     return node;
   };

@@ -15,13 +15,13 @@ import { IStringifyOptions } from 'qs';
 import { process } from '@graphql-mesh/cross-helpers';
 import { Logger } from '@graphql-mesh/types';
 import {
-  HandlerDirective,
   HTTPOperationDirective,
   LinkDirective,
   LinkResolverDirective,
   PubSubOperationDirective,
   ResolveRootDirective,
   ResponseMetadataDirective,
+  TransportDirective,
 } from './directives.js';
 import {
   JSONSchemaLinkConfig,
@@ -54,7 +54,7 @@ const responseMetadataType = new GraphQLObjectType({
   },
 });
 
-export async function addExecutionDirectivesToComposer(
+export function addExecutionDirectivesToComposer(
   subgraphName: string,
   {
     schemaComposer,
@@ -67,22 +67,6 @@ export async function addExecutionDirectivesToComposer(
     handlerName,
   }: AddExecutionLogicToComposerOptions,
 ) {
-  schemaComposer.addDirective(HandlerDirective);
-  schemaComposer.Query.setDirectiveByName(
-    'handler',
-    JSON.parse(
-      JSON.stringify({
-        subgraph: subgraphName,
-        name: handlerName,
-        options: {
-          endpoint,
-          operationHeaders,
-          queryStringOptions,
-          queryParams,
-        },
-      }),
-    ),
-  );
   logger.debug(`Attaching execution directives to the schema`);
   for (const operationConfig of operations) {
     const { httpMethod, rootTypeName, fieldName } = getOperationMetadata(operationConfig);
@@ -287,5 +271,26 @@ ${operationConfig.description || ''}
   }
 
   logger.debug(`Building the executable schema.`);
-  return schemaComposer;
+  if (schemaComposer.Query.getFieldNames().length === 0) {
+    schemaComposer.Query.addFields({
+      dummy: {
+        type: 'String',
+        resolve: () => 'dummy',
+      },
+    });
+  }
+
+  schemaComposer.addDirective(TransportDirective);
+  const schema = schemaComposer.buildSchema();
+  const schemaExtensions: any = (schema.extensions = schema.extensions || {});
+  schemaExtensions.directives = schemaExtensions.directives || {};
+  schemaExtensions.directives.transport = {
+    subgraph: subgraphName,
+    kind: handlerName,
+    location: endpoint,
+    headers: operationHeaders,
+    queryParams,
+    queryStringOptions,
+  };
+  return schema;
 }

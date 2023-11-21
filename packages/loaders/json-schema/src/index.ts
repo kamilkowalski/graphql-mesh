@@ -1,6 +1,6 @@
 import { GraphQLSchema } from 'graphql';
 import { createDefaultExecutor } from '@graphql-tools/delegate';
-import { ProcessDirectiveArgs, processDirectives } from './directives.js';
+import { processDirectives } from './directives.js';
 import {
   loadGraphQLSchemaFromJSONSchemas,
   loadNonExecutableGraphQLSchemaFromJSONSchemas,
@@ -25,12 +25,22 @@ export function loadJSONSchemaSubgraph(
   };
 }
 
-export function getSubgraphExecutor({
-  getSubgraph,
-  options,
-}: {
-  getSubgraph: () => GraphQLSchema;
-  options: ProcessDirectiveArgs;
-}) {
-  return createDefaultExecutor(processDirectives(getSubgraph(), options));
+export interface JSONSchemaTransportEntry {
+  kind: 'json-schema';
+  location: string;
+  headers: Record<string, string>;
+  queryParams: Record<string, string>;
+}
+
+export function getSubgraphExecutor(
+  options: JSONSchemaTransportEntry,
+  getSubgraph: () => GraphQLSchema,
+) {
+  return createDefaultExecutor(
+    processDirectives(getSubgraph(), {
+      endpoint: options.location,
+      operationHeaders: options.headers,
+      queryParams: options.queryParams,
+    }),
+  );
 }

@@ -20,6 +20,7 @@ describe('Composition', () => {
   const bSchema = buildSchema(/* GraphQL */ `
     type Query {
       foo(id: ID!): Foo!
+      foos(ids: [ID!]!): [Foo!]!
     }
 
     type Foo {

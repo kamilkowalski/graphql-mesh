@@ -19,33 +19,32 @@ import {
 } from '@graphql-mesh/fusion-execution';
 import { ExecutionRequest, Executor, getDirective, isPromise } from '@graphql-tools/utils';
 
-export type ExecutionHandlerEntry = {
-  name: string;
-  options: Record<string, any>;
+export type TransportEntry = {
+  kind: string;
+  location: string;
+  headers: Record<string, string>;
+  options: any;
 };
 
-export function getSubgraphHandlerMapFromSupergraph(supergraph: GraphQLSchema) {
-  const queryType = supergraph.getQueryType();
-  if (!queryType) {
-    throw new Error('Query type is missing');
-  }
-  const handlerDirectives = getDirective(supergraph, queryType, 'handler');
-  const subgraphHandlerMap: Record<string, ExecutionHandlerEntry> = {};
-  for (const { name: handlerName, options: handlerOptions, subgraph } of handlerDirectives) {
-    subgraphHandlerMap[subgraph] = {
-      name: handlerName,
-      options: handlerOptions,
+export function getSubgraphTransportMapFromSupergraph(supergraph: GraphQLSchema) {
+  const transportDirectives = getDirective(supergraph, supergraph, 'transport');
+  const subgraphTransportEntryMap: Record<string, TransportEntry> = {};
+  for (const { kind, subgraph, location, headers, ...options } of transportDirectives) {
+    subgraphTransportEntryMap[subgraph] = {
+      kind,
+      location,
+      headers,
+      options,
     };
   }
 
-  return subgraphHandlerMap;
+  return subgraphTransportEntryMap;
 }
 
 export function getExecutorForSupergraph(
   supergraph: GraphQLSchema,
-  getExecutorFromHandler: (
-    handlerName: string,
-    handlerOptions: any,
+  getTransportExecutor: (
+    transportEntry: TransportEntry,
     getSubgraph: () => GraphQLSchema,
   ) => Executor | Promise<Executor>,
   planCache: PlanCache,
@@ -59,7 +58,7 @@ export function getExecutorForSupergraph(
       }
     }
   }
-  const handlerOptsMap = getSubgraphHandlerMapFromSupergraph(supergraph);
+  const transportEntryMap = getSubgraphTransportMapFromSupergraph(supergraph);
   const executorMap: Record<string, Executor> = {};
   return function supergraphExecutor(execReq: ExecutionRequest) {
     function onSubgraphExecute(
@@ -70,7 +69,7 @@ export function getExecutorForSupergraph(
     ) {
       let executor: Executor = executorMap[subgraphName];
       if (executor == null) {
-        const handlerOpts = handlerOptsMap[subgraphName];
+        const transportEntry = transportEntryMap[subgraphName];
         // eslint-disable-next-line no-inner-declarations
         function wrapExecutorWithHooks(currentExecutor: Executor) {
           if (onSubgraphExecuteHooks.length) {
@@ -80,8 +79,10 @@ export function getExecutorForSupergraph(
                 const onSubgraphExecuteDoneHook = await onSubgraphExecute({
                   supergraph,
                   subgraphName,
-                  handlerName: handlerOpts.name,
-                  handlerOptions: handlerOpts.options,
+                  transportKind: transportEntry.kind,
+                  transportLocation: transportEntry.location,
+                  transportHeaders: transportEntry.headers,
+                  transportOptions: transportEntry.options,
                   executionRequest: subgraphExecReq,
                   executor: currentExecutor,
                   setExecutor(newExecutor: Executor) {
@@ -110,7 +111,7 @@ export function getExecutorForSupergraph(
           return currentExecutor;
         }
         executor = function lazyExecutor(subgraphExecReq: ExecutionRequest) {
-          const executor$ = getExecutorFromHandler(handlerOpts.name, handlerOpts.options, () =>
+          const executor$ = getTransportExecutor(transportEntry, () =>
             extractSubgraphFromSupergraph(subgraphName, supergraph),
           );
           if (isPromise(executor$)) {
@@ -175,9 +176,8 @@ export interface YogaSupergraphPluginOptions {
     | DocumentNode
     | string
     | Promise<GraphQLSchema | string | DocumentNode>;
-  getExecutorFromHandler(
-    handlerName: string,
-    handlerOptions: any,
+  getTransportExecutor(
+    transportEntry: TransportEntry,
     getSubgraph: () => GraphQLSchema,
   ): Executor | Promise<Executor>;
   planCache?: PlanCache;
@@ -226,7 +226,7 @@ export function useSupergraph(
         supergraph = ensureSchema(supergraph_);
         const executor = getExecutorForSupergraph(
           supergraph,
-          opts.getExecutorFromHandler,
+          opts.getTransportExecutor,
           planCache,
           plugins,
         );
@@ -236,7 +236,7 @@ export function useSupergraph(
       supergraph = ensureSchema(supergraph$);
       const executor = getExecutorForSupergraph(
         supergraph,
-        opts.getExecutorFromHandler,
+        opts.getTransportExecutor,
         planCache,
         plugins,
       );
@@ -290,8 +290,10 @@ export type OnSubgraphExecuteHook = (
 export interface OnSupergraphExecutePayload {
   supergraph: GraphQLSchema;
   subgraphName: string;
-  handlerName: string;
-  handlerOptions: any;
+  transportKind: string;
+  transportLocation: string;
+  transportHeaders: Record<string, string>;
+  transportOptions: any;
   executionRequest: ExecutionRequest;
   executor: Executor;
   setExecutor(executor: Executor): void;

@@ -6,7 +6,6 @@ import {
   GraphQLEnumType,
   GraphQLField,
   GraphQLID,
-  GraphQLInputObjectType,
   GraphQLInt,
   GraphQLInterfaceType,
   GraphQLLeafType,
@@ -578,10 +577,13 @@ export function processDirectives(
   if (nonExecutableObjMapScalar && isScalarType(nonExecutableObjMapScalar)) {
     addExecutionLogicToScalar(nonExecutableObjMapScalar, ObjMapScalar);
   }
-  const handlerDirectives = getDirective(schema, schema.getQueryType(), 'handler');
-  const currDirective = handlerDirectives?.[0];
+  const transportDirectives = getDirective(schema, schema, 'transport');
+  const currDirective = transportDirectives?.[0];
   const globalOptions = {
-    ...(currDirective?.options || {}),
+    endpoint: currDirective?.location,
+    operationHeaders: currDirective?.headers,
+    queryParams: currDirective?.queryParams,
+    queryStringOptions: currDirective?.queryStringOptions,
     ...extraGlobalOptions,
   };
   const typeMap = schema.getTypeMap();
@@ -782,16 +784,19 @@ export const ExampleDirective = new GraphQLDirective({
   isRepeatable: true,
 });
 
-export const HandlerOptionsInputType = new GraphQLInputObjectType({
-  name: 'HandlerOptions',
-  fields: {
+export const TransportDirective = new GraphQLDirective({
+  name: 'transport',
+  args: {
     subgraph: {
       type: GraphQLString,
     },
-    endpoint: {
+    kind: {
       type: GraphQLString,
     },
-    operationHeaders: {
+    location: {
+      type: GraphQLString,
+    },
+    headers: {
       type: ObjMapScalar,
     },
     queryStringOptions: {
@@ -799,21 +804,6 @@ export const HandlerOptionsInputType = new GraphQLInputObjectType({
     },
     queryParams: {
       type: ObjMapScalar,
-    },
-  },
-});
-
-export const HandlerDirective = new GraphQLDirective({
-  name: 'handler',
-  args: {
-    subgraph: {
-      type: GraphQLString,
-    },
-    name: {
-      type: GraphQLString,
-    },
-    options: {
-      type: HandlerOptionsInputType,
     },
   },
   locations: [DirectiveLocation.OBJECT],

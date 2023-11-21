@@ -3,5 +3,5 @@
   "compilerOptions": {
     "module": "commonjs"
   },
-  "files": ["mesh.config.ts"]
+  "files": ["mesh.config.ts", "vaccination/index.ts"]
 }

@@ -4,9 +4,14 @@ import { loadOpenAPISubgraph } from '@omnigraph/openapi';
 export const devConfig: MeshDevCLIConfig = {
   subgraphs: [
     {
-      sourceHandler: loadOpenAPISubgraph('my-openapi', {
-        source:
-          'https://raw.githubusercontent.com/grokify/api-specs/master/stackexchange/stackexchange-api-v2.2_openapi-v3.0.yaml',
+      sourceHandler: loadOpenAPISubgraph('petstore', {
+        source: 'https://petstore.swagger.io/v2/swagger.json',
+      }),
+    },
+    {
+      sourceHandler: loadOpenAPISubgraph('vaccination', {
+        source: 'http://localhost:4001/openapi.json',
+        ignoreErrorResponses: true,
       }),
     },
   ],

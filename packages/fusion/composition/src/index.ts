@@ -1,11 +1,16 @@
 import {
+  getNamedType,
+  GraphQLField,
   GraphQLFieldConfig,
   GraphQLInputFieldConfig,
   GraphQLNamedType,
   GraphQLSchema,
+  isObjectType,
   isSpecifiedScalarType,
   OperationTypeNode,
 } from 'graphql';
+import { pascalCase } from 'pascal-case';
+import { snakeCase } from 'snake-case';
 import { mergeSchemas, MergeSchemasConfig } from '@graphql-tools/schema';
 import {
   DirectableGraphQLObject,
@@ -29,6 +34,18 @@ const defaultRootTypeNames: Record<OperationTypeNode, string> = {
   subscription: 'Subscription',
 };
 
+type ResolverAnnotation = {
+  subgraph: string;
+  operation: string;
+  kind: 'BATCH' | 'FETCH';
+};
+
+type VariableAnnotation = {
+  subgraph: string;
+  name: string;
+  select: string;
+};
+
 export function composeSubgraphs(
   subgraphs: SubgraphConfig[],
   options?: Omit<MergeSchemasConfig, 'schema'>,
@@ -43,6 +60,9 @@ export function composeSubgraphs(
       typeToOperationType.set(rootType.name, operationType);
     }
 
+    const queryType = schema.getQueryType();
+    const queryFields = queryType?.getFields();
+
     const annotatedSubgraph = mapSchema(schema, {
       [MapperKind.TYPE]: type => {
         if (isSpecifiedScalarType(type)) {
@@ -55,17 +75,26 @@ export function composeSubgraphs(
             name: defaultRootTypeNames[operationType],
           });
         }
+        const directives: Record<string, any> = {
+          ...getDirectiveExtensions(schema, type),
+          source: {
+            subgraph: subgraphName,
+            name: type.name,
+          },
+        };
+        // Automatic type merging configuration based on ById and ByIds naming conventions
+        addAnnotationsForSemanticConventions({
+          type,
+          queryFields,
+          subgraphName,
+          directives,
+          subgraphs,
+        });
         return new (Object.getPrototypeOf(type).constructor)({
           ...type.toConfig(),
           extensions: {
             ...type.extensions,
-            directives: {
-              ...getDirectiveExtensions(schema, type),
-              source: {
-                subgraph: subgraphName,
-                name: type.name,
-              },
-            },
+            directives,
           },
         });
       },
@@ -220,4 +249,94 @@ function getDirectiveExtensions(schema: GraphQLSchema, directableNode: Directabl
     directivesObject[directive.name] = directive.args;
   }
   return directivesObject;
+}
+
+function addAnnotationsForSemanticConventions({
+  type,
+  queryFields,
+  subgraphName,
+  directives,
+  subgraphs,
+}: {
+  type: GraphQLNamedType;
+  queryFields?: Record<string, GraphQLField<any, any>>;
+  subgraphName: string;
+  directives: Record<string, any>;
+  subgraphs: SubgraphConfig[];
+}) {
+  if (queryFields && isObjectType(type)) {
+    const fieldMap = type.getFields();
+    for (const queryFieldName in queryFields) {
+      for (const fieldName in fieldMap) {
+        const objectField = fieldMap[fieldName];
+        const queryField = queryFields[queryFieldName];
+        const arg = queryField.args.find(
+          arg => getNamedType(arg.type) === getNamedType(objectField.type),
+        );
+        const queryFieldTypeName = getNamedType(queryField.type).name;
+        const queryFieldNameSnakeCase = snakeCase(queryFieldName);
+        const varName = `${type.name}_${fieldName}`;
+        if (arg && queryFieldTypeName === type.name) {
+          // eslint-disable-next-line no-inner-declarations
+          function addVariablesForOtherSubgraphs() {
+            directives.variable ||= [];
+            for (const otherSubgraphConfig of subgraphs) {
+              const otherType = otherSubgraphConfig.schema.getType(type.name);
+              if (isObjectType(otherType)) {
+                const otherTypeFields = otherType.getFields();
+                if (fieldName in otherTypeFields) {
+                  directives.variable ||= [];
+                  if (
+                    !directives.variable.some(
+                      (v: VariableAnnotation) =>
+                        v.subgraph === otherSubgraphConfig.name && v.name === varName,
+                    )
+                  ) {
+                    directives.variable.push({
+                      subgraph: otherSubgraphConfig.name,
+                      name: varName,
+                      select: fieldName,
+                    });
+                  }
+                }
+              }
+            }
+          }
+          switch (queryFieldNameSnakeCase) {
+            case snakeCase(type.name):
+            case snakeCase(`get_${type.name}_by_${fieldName}`):
+            case snakeCase(`${type.name}_by_${fieldName}`): {
+              const operationName = pascalCase(`${type.name}_by_${fieldName}`);
+              const resolverAnnotation: ResolverAnnotation = {
+                subgraph: subgraphName,
+                operation: `query ${operationName}($${varName}: ${arg.type}) { ${queryFieldName}(${arg.name}: $${varName}) }`,
+                kind: 'FETCH',
+              };
+              directives.resolver ||= [];
+              directives.resolver.push(resolverAnnotation);
+              addVariablesForOtherSubgraphs();
+              break;
+            }
+            case snakeCase(`${type.name}s`):
+            case snakeCase(`get_${type.name}s_by_${fieldName}`):
+            case snakeCase(`${type.name}s_by_${fieldName}`):
+            case snakeCase(`get_${type.name}s_by_${fieldName}s`):
+            case snakeCase(`${type.name}s_by_${fieldName}s`): {
+              const operationName = pascalCase(`${type.name}s_by_${fieldName}s`);
+              const resolverAnnotation: ResolverAnnotation = {
+                subgraph: subgraphName,
+                operation: `query ${operationName}($${varName}: ${arg.type}) { ${queryFieldName}(${arg.name}: $${varName}) }`,
+                kind: 'BATCH',
+              };
+              directives.resolver ||= [];
+              directives.resolver.push(resolverAnnotation);
+              directives.variable ||= [];
+              addVariablesForOtherSubgraphs();
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
 }

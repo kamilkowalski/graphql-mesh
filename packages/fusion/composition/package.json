@@ -52,6 +52,8 @@
   "dependencies": {
     "@graphql-tools/schema": "^10.0.0",
     "@graphql-tools/utils": "^10.0.8",
+    "pascal-case": "^3.0.0",
+    "snake-case": "^3.0.0",
     "tslib": "^2.4.0"
   },
   "publishConfig": {

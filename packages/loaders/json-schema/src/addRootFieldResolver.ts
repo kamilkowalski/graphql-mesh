@@ -85,7 +85,7 @@ export function addHTTPRootFieldResolver(
   };
   const returnNamedGraphQLType = getNamedType(field.type);
   field.resolve = async (root, args, context, info) => {
-    const logger = context.logger || globalLogger;
+    const logger = context?.logger || globalLogger;
     const operationLogger = logger.child(`${info.parentType.name}.${info.fieldName}`);
     operationLogger.debug(`=> Resolving`);
     const interpolationData = { root, args, context, env: process.env };

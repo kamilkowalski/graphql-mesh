@@ -5402,6 +5402,11 @@
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
 
+"@sinclair/typebox@^0.31.23":
+  version "0.31.28"
+  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.31.28.tgz#b68831e7bc7d09daac26968ea32f42bedc968ede"
+  integrity sha512-/s55Jujywdw/Jpan+vsy6JZs1z2ZTGxTmbZTPiuSL2wz9mfzA2gN1zzaqmvfi4pq+uOt7Du85fkiwv5ymW84aQ==
+
 "@sindresorhus/is@^4.0.0":
   version "4.6.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-4.6.0.tgz#3c7c9c46e678feefe7a2e5bb609d3dbd665ffb3f"
@@ -11963,6 +11968,41 @@ fets@0.6.6, fets@^0.6.0, fets@^0.6.4:
     ts-toolbelt "^9.6.0"
     tslib "^2.3.1"
 
+<<<<<<< HEAD
+=======
+fets@^0.2.0:
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/fets/-/fets-0.2.9.tgz#8bdd5506f955b3697a888fb204631533dc241386"
+  integrity sha512-fIKA+FalKrLxpQi/l22n18iF/hQmxz1L2fPw77FIeeToM2gkETu1J79MIO66h2exCwEcyQyQgfqeFIQtlIBNMg==
+  dependencies:
+    "@ardatan/fast-json-stringify" "^0.0.6"
+    "@whatwg-node/cookie-store" "^0.2.0"
+    "@whatwg-node/fetch" "^0.9.4"
+    "@whatwg-node/server" "^0.9.0"
+    ajv "^8.12.0"
+    ajv-formats "^2.1.1"
+    hotscript "^1.0.11"
+    json-schema-to-ts "^2.9.1"
+    tslib "^2.3.1"
+    zod "^3.21.4"
+    zod-to-json-schema "^3.20.5"
+
+fets@^0.6.3:
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/fets/-/fets-0.6.3.tgz#c60f6194e538f4a45efa33491ddcc214d4961d30"
+  integrity sha512-I69/TXLzyCUzHFi1AZCvdhER6CHxIHhnx1LrRmAI+Eew/YM3UCvVJs97us3tw4ULel2U2FpzDBKKSrKxFcx1bA==
+  dependencies:
+    "@sinclair/typebox" "^0.31.23"
+    "@whatwg-node/cookie-store" "^0.2.0"
+    "@whatwg-node/fetch" "^0.9.4"
+    "@whatwg-node/server" "^0.9.15"
+    hotscript "^1.0.11"
+    json-schema-to-ts "^2.9.1"
+    qs "^6.11.2"
+    ts-toolbelt "^9.6.0"
+    tslib "^2.3.1"
+
+>>>>>>> b1306b2a3 (Automatic type merging)
 figures@^3.0.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/figures/-/figures-3.2.0.tgz#625c18bd293c604dc4a8ddb2febf0c88341746af"
@@ -18474,7 +18514,7 @@ parseurl@^1.3.2, parseurl@^1.3.3, parseurl@~1.3.2, parseurl@~1.3.3:
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"
   integrity sha512-CiyeOxFT/JZyN5m0z9PfXw4SCBJ6Sygz1Dpl0wqjlhDEGGBP1GnsUVEL0p63hoG1fcj3fHynXi9NYO4nWOL+qQ==
 
-pascal-case@3.1.2, pascal-case@^3.1.1, pascal-case@^3.1.2:
+pascal-case@3.1.2, pascal-case@^3.0.0, pascal-case@^3.1.1, pascal-case@^3.1.2:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/pascal-case/-/pascal-case-3.1.2.tgz#b48e0ef2b98e205e7c1dae747d0b1508237660eb"
   integrity sha512-uWlGT3YSnK9x3BQJaOdcZwrnV6hPpd8jFH1/ucpiLRPh/2zCVJKS19E4GvYHvaCcACn3foXZ0cLB9Wrx1KGe5g==
@@ -21336,7 +21376,7 @@ smartwrap@^2.0.2:
     wcwidth "^1.0.1"
     yargs "^15.1.0"
 
-snake-case@^3.0.4:
+snake-case@^3.0.0, snake-case@^3.0.4:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/snake-case/-/snake-case-3.0.4.tgz#4f2bbd568e9935abdfd593f34c691dadb49c452c"
   integrity sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==

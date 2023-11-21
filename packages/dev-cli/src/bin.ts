@@ -3,6 +3,7 @@ import 'ts-node/register';
 import 'dotenv/config';
 
 runDevCLI().catch(e => {
-  spinnies.fail('main', { text: e.stack });
+  spinnies.stopAll('fail');
+  console.error(e);
   process.exit(1);
 });

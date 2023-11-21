@@ -10,6 +10,8 @@
   "devDependencies": {
     "@graphql-mesh/dev-cli": "^0.0.0",
     "@graphql-mesh/serve-cli": "^0.0.0",
-    "graphql": "^16.8.1"
+    "fets": "^0.6.3",
+    "graphql": "^16.8.1",
+    "ts-node": "^10.9.1"
   }
 }

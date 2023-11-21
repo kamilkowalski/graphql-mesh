@@ -1,7 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Spotify should generate correct schema: spotify-schema 1`] = `
-"schema {
+"schema @transport(subgraph: "test", kind: "openapi", location: "https://api.spotify.com/v1") {
   query: Query
   mutation: Mutation
 }
@@ -20,11 +20,11 @@ directive @discriminator(subgraph: String, field: String, mapping: ObjMap) on IN
 
 directive @statusCodeTypeName(subgraph: String, typeName: String, statusCode: ID) repeatable on UNION
 
-directive @handler(subgraph: String, name: String, options: HandlerOptions) on OBJECT
-
 directive @httpOperation(subgraph: String, path: String, operationSpecificHeaders: ObjMap, httpMethod: HTTPMethod, isBinary: Boolean, requestBaseBody: ObjMap, queryParamArgMap: ObjMap, queryStringOptionsByParam: ObjMap) on FIELD_DEFINITION
 
-type Query @handler(subgraph: "test", name: "openapi", options: {endpoint: "https://api.spotify.com/v1"}) {
+directive @transport(subgraph: String, kind: String, location: String, headers: ObjMap, queryStringOptions: ObjMap, queryParams: ObjMap) on OBJECT
+
+type Query {
   "Get Spotify catalog information for a single album.\\n"
   get_an_album(
     "The [Spotify ID](/documentation/web-api/concepts/spotify-uris-ids) of the album."
@@ -2453,14 +2453,6 @@ input start_a_users_playback_request_Input {
 }
 
 scalar ObjMap
-
-input HandlerOptions {
-  subgraph: String
-  endpoint: String
-  operationHeaders: ObjMap
-  queryStringOptions: ObjMap
-  queryParams: ObjMap
-}
 
 enum HTTPMethod {
   GET

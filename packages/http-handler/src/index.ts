@@ -21,7 +21,7 @@ import { Logger } from '@graphql-mesh/types';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { DefaultLogger, getHeadersObj } from '@graphql-mesh/utils';
 import { getStitchedSchemaFromSupergraphSdl } from '@graphql-tools/federation';
-import { getDocumentNodeFromSchema } from '@graphql-tools/utils';
+import { createGraphQLError, getDocumentNodeFromSchema } from '@graphql-tools/utils';
 import { isPromise } from '@whatwg-node/server';
 import type { CORSPluginOptions } from '@whatwg-node/server/typings/plugins/useCors';
 
@@ -67,9 +67,9 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
    */
   batching?: BatchingOptions;
   /**
-   * Imported handlers
+   * Imported transports
    */
-  handlers?: Record<string, any> | ((handlerName: string) => Promise<any> | any);
+  transports?: Record<string, any> | ((transportKind: string) => Promise<any> | any);
   /**
    * WHATWG compatible Fetch implementation
    */
@@ -83,15 +83,15 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
 export function createMeshHTTPHandler<TServerContext>(
   config: MeshHTTPHandlerConfiguration<TServerContext>,
 ): YogaServerInstance<TServerContext, {}> & { invalidateSupergraph(): void } {
-  let handlerImportFn: (handlerName: string) => Promise<any> | any;
-  if (config.handlers != null) {
-    if (typeof config.handlers === 'function') {
-      handlerImportFn = config.handlers as any;
+  let transportImportFn: (handlerName: string) => Promise<any> | any;
+  if (config.transports != null) {
+    if (typeof config.transports === 'function') {
+      transportImportFn = config.transports as any;
     } else {
-      handlerImportFn = (handlerName: string) => (config.handlers as any)[handlerName];
+      transportImportFn = (handlerName: string) => (config.transports as any)[handlerName];
     }
   } else {
-    handlerImportFn = defaultHandlerImport;
+    transportImportFn = defaultHandlerImport;
   }
 
   let fetchAPI: FetchAPI = config.fetchAPI;
@@ -141,19 +141,17 @@ export function createMeshHTTPHandler<TServerContext>(
           assumeValidSDL: true,
         });
       },
-      getExecutorFromHandler(handlerName, handlerOptions, getSubgraph) {
+      getTransportExecutor(transportEntry, getSubgraph) {
         function handleImportResult(importRes: any) {
           const getSubgraphExecutor = importRes.getSubgraphExecutor;
           if (!getSubgraphExecutor) {
-            logger.error(`getSubgraphExecutor is not exported from the handler: ${handlerName}`);
-            throw new Error(`getSubgraphExecutor is not exported from the handler: ${handlerName}`);
+            throw createGraphQLError(
+              `getSubgraphExecutor is not exported from the transport: ${transportEntry.kind}`,
+            );
           }
-          return getSubgraphExecutor({
-            getSubgraph,
-            options: handlerOptions,
-          });
+          return getSubgraphExecutor(transportEntry, getSubgraph);
         }
-        const importRes$ = handlerImportFn(handlerName);
+        const importRes$ = transportImportFn(transportEntry.kind);
         if (isPromise(importRes$)) {
           return importRes$.then(handleImportResult);
         }

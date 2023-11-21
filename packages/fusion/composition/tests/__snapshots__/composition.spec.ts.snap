@@ -8,9 +8,10 @@ exports[`Composition composes basic schemas 1`] = `
 type Query {
   myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
   foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
+  foos(ids: [ID!]!): [Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type Foo @source(subgraph: "B", name: "Foo") {
+type Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
   id: ID! @source(subgraph: "B", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"
@@ -24,9 +25,10 @@ exports[`Composition composes with transforms on fields 1`] = `
 type Query {
   A_myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
   B_foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
+  B_foos(ids: [ID!]!): [Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type Foo @source(subgraph: "B", name: "Foo") {
+type Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
   A_id: ID! @source(subgraph: "A", name: "id")
   B_id: ID! @source(subgraph: "B", name: "id")
   B_bar: String! @source(subgraph: "B", name: "bar")
@@ -48,9 +50,10 @@ type A_Foo @source(subgraph: "A", name: "Foo") {
 
 type B_Query {
   foo(id: ID!): B_Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
+  foos(ids: [ID!]!): [B_Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type B_Foo @source(subgraph: "B", name: "Foo") {
+type B_Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
   id: ID! @source(subgraph: "B", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"
@@ -66,10 +69,11 @@ directive @foo on FIELD_DEFINITION
 type Query {
   myFoo: Foo! @resolver(subgraph: "A", operation: "query myFoo { myFoo }") @source(subgraph: "A", name: "myFoo")
   foo(id: ID!): Foo! @resolver(subgraph: "B", operation: "query foo($id: ID!) { foo(id: $id) }") @source(subgraph: "B", name: "foo")
+  foos(ids: [ID!]!): [Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
   cFoo: Foo! @foo @resolver(subgraph: "C", operation: "query cFoo { cFoo }") @source(subgraph: "C", name: "cFoo")
 }
 
-type Foo @source(subgraph: "C", name: "Foo") {
+type Foo @source(subgraph: "C", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") @variable(subgraph: "C", name: "Foo_id", select: "id") {
   id: ID! @source(subgraph: "C", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"

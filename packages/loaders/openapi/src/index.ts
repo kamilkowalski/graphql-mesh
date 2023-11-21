@@ -22,12 +22,22 @@ export function loadOpenAPISubgraph(
   };
 }
 
-export function getSubgraphExecutor({
-  getSubgraph,
-  options,
-}: {
-  getSubgraph: () => GraphQLSchema;
+export interface OpenAPITransportEntry {
+  kind: 'openapi';
+  location: string;
+  headers: Record<string, string>;
   options: ProcessDirectiveArgs;
-}) {
-  return createDefaultExecutor(processDirectives(getSubgraph(), options));
+}
+
+export function getSubgraphExecutor(
+  transportEntry: OpenAPITransportEntry,
+  getSubgraph: () => GraphQLSchema,
+) {
+  return createDefaultExecutor(
+    processDirectives(getSubgraph(), {
+      endpoint: transportEntry.location,
+      operationHeaders: transportEntry.headers,
+      ...transportEntry.options,
+    }),
+  );
 }
