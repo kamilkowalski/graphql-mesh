@@ -1,6 +1,6 @@
 schema
-  @transport(subgraph: "vaccination", kind: "openapi", location: "http://localhost:4001")
-  @transport(subgraph: "petstore", kind: "openapi", location: "https://petstore.swagger.io/v2") {
+  @transport(subgraph: "petstore", kind: "rest", location: "https://petstore.swagger.io/v2")
+  @transport(subgraph: "vaccination", kind: "http", location: "http://localhost:4001/graphql") {
   query: Query
   mutation: Mutation
 }
@@ -141,29 +141,33 @@ type Query {
     )
     @resolver(subgraph: "petstore", operation: "query logoutUser { logoutUser }")
     @source(subgraph: "petstore", name: "logoutUser")
-  petById(id: JSON!): Pet
-    @httpOperation(
+  petById(id: BigInt!): Pet
+    @resolver(
       subgraph: "vaccination"
-      path: "/pet/{args.id}"
-      operationSpecificHeaders: "{\"accept\":\"application/json\"}"
-      httpMethod: GET
+      operation: "query petById($id: BigInt!) { petById(id: $id) }"
     )
-    @resolver(subgraph: "vaccination", operation: "query petById($id: JSON!) { petById(id: $id) }")
     @source(subgraph: "vaccination", name: "petById")
 }
 
 "Pet object that needs to be added to the store"
 type Pet
-  @source(subgraph: "vaccination", name: "Pet")
   @source(subgraph: "petstore", name: "Pet")
+  @source(subgraph: "vaccination", name: "Pet")
   @resolver(
     subgraph: "petstore"
     operation: "query PetById($Pet_id: BigInt!) { getPetById(petId: $Pet_id) }"
     kind: "FETCH"
   )
+  @resolver(
+    subgraph: "vaccination"
+    operation: "query PetById($Pet_id: BigInt!) { petById(id: $Pet_id) }"
+    kind: "FETCH"
+  )
+  @variable(subgraph: "petstore", name: "Pet_id", select: "id")
+  @variable(subgraph: "vaccination", name: "Pet_id", select: "id")
   @variable(subgraph: "petstore", name: "Pet_id", select: "id")
   @variable(subgraph: "vaccination", name: "Pet_id", select: "id") {
-  id: BigInt! @source(subgraph: "vaccination", name: "id") @source(subgraph: "petstore", name: "id")
+  id: BigInt! @source(subgraph: "petstore", name: "id") @source(subgraph: "vaccination", name: "id")
   category: Category @source(subgraph: "petstore", name: "category")
   name: String! @source(subgraph: "petstore", name: "name")
   photoUrls: [String]! @source(subgraph: "petstore", name: "photoUrls")
@@ -174,6 +178,9 @@ type Pet
 
 "The `BigInt` scalar type represents non-fractional signed whole numeric values."
 scalar BigInt
+  @source(subgraph: "vaccination", name: "BigInt")
+  @source(subgraph: "petstore", name: "BigInt")
+  @source(subgraph: "vaccination", name: "BigInt")
 
 type Category @source(subgraph: "petstore", name: "Category") {
   id: BigInt @source(subgraph: "petstore", name: "id")
@@ -205,7 +212,7 @@ type Order
   @source(subgraph: "petstore", name: "Order")
   @resolver(
     subgraph: "petstore"
-    operation: "query OrderById($Order_id: BigInt!) { getOrderById(orderId: Order_id) }"
+    operation: "query OrderById($Order_id: BigInt!) { getOrderById(orderId: $Order_id) }"
     kind: "FETCH"
   )
   @variable(subgraph: "petstore", name: "Order_id", select: "id") {
@@ -219,6 +226,8 @@ type Order
 
 "A date-time string at UTC, such as 2007-12-03T10:15:30Z, compliant with the `date-time` format outlined in section 5.6 of the RFC 3339 profile of the ISO 8601 standard for representation of dates and times using the Gregorian calendar."
 scalar DateTime
+  @source(subgraph: "petstore", name: "DateTime")
+  @source(subgraph: "petstore", name: "DateTime")
 
 "Order Status"
 enum mutation_placeOrder_status @source(subgraph: "petstore", name: "mutation_placeOrder_status") {
@@ -230,6 +239,9 @@ enum mutation_placeOrder_status @source(subgraph: "petstore", name: "mutation_pl
 "The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
 scalar JSON
   @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+  @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+  @source(subgraph: "petstore", name: "JSON")
+  @source(subgraph: "petstore", name: "JSON")
 
 "Updated user object"
 type User @source(subgraph: "petstore", name: "User") {
@@ -453,15 +465,17 @@ input User_Input @source(subgraph: "petstore", name: "User_Input") {
 }
 
 scalar ObjMap
+  @source(subgraph: "petstore", name: "ObjMap")
+  @source(subgraph: "petstore", name: "ObjMap")
 
-enum HTTPMethod {
-  GET
-  HEAD
-  POST
-  PUT
-  DELETE
-  CONNECT
-  OPTIONS
-  TRACE
-  PATCH
+enum HTTPMethod @source(subgraph: "petstore", name: "HTTPMethod") {
+  GET @source(subgraph: "petstore", name: "GET")
+  HEAD @source(subgraph: "petstore", name: "HEAD")
+  POST @source(subgraph: "petstore", name: "POST")
+  PUT @source(subgraph: "petstore", name: "PUT")
+  DELETE @source(subgraph: "petstore", name: "DELETE")
+  CONNECT @source(subgraph: "petstore", name: "CONNECT")
+  OPTIONS @source(subgraph: "petstore", name: "OPTIONS")
+  TRACE @source(subgraph: "petstore", name: "TRACE")
+  PATCH @source(subgraph: "petstore", name: "PATCH")
 }

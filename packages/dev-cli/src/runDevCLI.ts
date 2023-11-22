@@ -38,7 +38,7 @@ export async function runDevCLI(
   });
   const subgraphConfigsForComposition: SubgraphConfig[] = await Promise.all(
     meshDevCLIConfig.subgraphs.map(async subgraphCLIConfig => {
-      const { name: subgraphName, schema$ } = subgraphCLIConfig.sourceHandler;
+      const { name: subgraphName, schema$ } = subgraphCLIConfig.sourceHandler();
       spinnies.add(subgraphName, { text: `Loading subgraph` });
       let subgraphSchema: GraphQLSchema;
       try {

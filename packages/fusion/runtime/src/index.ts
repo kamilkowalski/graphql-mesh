@@ -11,11 +11,11 @@ import {
 import { createLRUCache, Plugin } from 'graphql-yoga';
 import { getDocumentString } from '@envelop/core';
 import {
-  createExecutableResolverOperationNodesWithDependencyMap,
+  createExecutablePlanForOperation,
   ExecutableOperationPlan,
   executeOperationPlan,
   extractSubgraphFromSupergraph,
-  planOperation,
+  serializeExecutableOperationPlan,
 } from '@graphql-mesh/fusion-execution';
 import { ExecutionRequest, Executor, getDirective, isPromise } from '@graphql-tools/utils';
 
@@ -131,17 +131,25 @@ export function getExecutorForSupergraph(
     const documentStr = getDocumentString(execReq.document);
     function handleCacheResult(cachedPlanRes: ExecutableOperationPlan) {
       if (!cachedPlanRes) {
-        const plan = planOperation(supergraph, execReq.document, execReq.operationName);
-        cachedPlanRes = createExecutableResolverOperationNodesWithDependencyMap(
-          plan.resolverOperationNodes,
-          plan.resolverDependencyFieldMap,
-        );
+        cachedPlanRes = createExecutablePlanForOperation({
+          supergraph,
+          document: execReq.document,
+          operationName: execReq.operationName,
+        });
         execReq.context?.waitUntil(planCache.set(documentStr, cachedPlanRes));
       }
       function handleOpExecResult(opExecRes: {
         exported: any;
         outputVariableMap: Map<string, any>;
       }) {
+        if (globalThis.process?.env?.DEBUG) {
+          return {
+            data: opExecRes.exported,
+            extensions: {
+              operationPlan: serializeExecutableOperationPlan(cachedPlanRes),
+            },
+          };
+        }
         return {
           data: opExecRes.exported,
         };

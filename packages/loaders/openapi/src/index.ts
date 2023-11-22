@@ -15,15 +15,15 @@ export { OpenAPILoaderOptions } from './types.js';
 export function loadOpenAPISubgraph(
   name: string,
   options: OpenAPILoaderOptions,
-): { name: string; schema$: Promise<GraphQLSchema> } {
-  return {
+): () => { name: string; schema$: Promise<GraphQLSchema> } {
+  return () => ({
     name,
     schema$: loadNonExecutableGraphQLSchemaFromOpenAPI(name, options),
-  };
+  });
 }
 
 export interface OpenAPITransportEntry {
-  kind: 'openapi';
+  kind: '@omnigraph/openapi';
   location: string;
   headers: Record<string, string>;
   options: ProcessDirectiveArgs;

@@ -22,7 +22,7 @@ export async function getGraphQLSchemaFromDereferencedJSONSchema(
     endpoint,
     queryParams,
     queryStringOptions,
-    handlerName = 'json-schema',
+    handlerName = 'rest',
   } = opts;
   logger.debug(`Generating GraphQL Schema from the bundled JSON Schema`);
   const visitorResult = await getComposerFromJSONSchema({

@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@graphql-mesh/fusion-runtime": "^0.0.0",
+    "@graphql-tools/executor-http": "^1.0.3",
     "@graphql-tools/federation": "^1.1.10",
     "@graphql-tools/utils": "^10.0.8",
     "@whatwg-node/server": "^0.9.16",

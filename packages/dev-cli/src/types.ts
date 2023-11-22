@@ -11,7 +11,7 @@ export interface MeshDevCLISubgraphConfig {
   transforms?: MeshDevCLITransformConfig[];
 }
 
-export type MeshDevCLISourceHandlerDef = {
+export type MeshDevCLISourceHandlerDef = () => {
   name: string;
   schema$: Promise<GraphQLSchema> | GraphQLSchema;
 };

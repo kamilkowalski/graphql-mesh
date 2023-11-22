@@ -1050,6 +1050,32 @@ describe('Execution', () => {
       },
     });
   });
+  it('works with variables with default values', async () => {
+    const operationInText = /* GraphQL */ `
+      query Test($id: ID = 1) {
+        foo(id: $id) {
+          id
+          baz
+        }
+      }
+    `;
+    const operationDoc = parseAndCache(operationInText);
+
+    const result = await executeOperation({
+      supergraph,
+      onExecute,
+      document: operationDoc,
+
+      operationName: 'Test',
+    });
+
+    expect(result.exported).toMatchObject({
+      foo: {
+        id: '1',
+        baz: 'C_BAZ_FOR_1',
+      },
+    });
+  });
   it('works with renames', async () => {
     const operationInText = /* GraphQL */ `
       query Test {
@@ -1075,7 +1101,8 @@ describe('Execution', () => {
       },
     });
   });
-  it.todo('conditional variables', async () => {
+  // TODO: later
+  it.skip('conditional variables', async () => {
     const supergraph = buildSchema(/* GraphQL */ `
       type Query {
         product(id: ID!): Product!

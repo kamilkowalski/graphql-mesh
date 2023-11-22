@@ -18,24 +18,21 @@ export { processDirectives } from './directives.js';
 export function loadJSONSchemaSubgraph(
   name: string,
   options: JSONSchemaLoaderOptions,
-): { name: string; schema$: Promise<GraphQLSchema> } {
-  return {
+): () => { name: string; schema$: Promise<GraphQLSchema> } {
+  return () => ({
     name,
     schema$: loadNonExecutableGraphQLSchemaFromJSONSchemas(name, options),
-  };
+  });
 }
 
-export interface JSONSchemaTransportEntry {
-  kind: 'json-schema';
+export interface RESTTransportEntry {
+  kind: 'rest';
   location: string;
   headers: Record<string, string>;
   queryParams: Record<string, string>;
 }
 
-export function getSubgraphExecutor(
-  options: JSONSchemaTransportEntry,
-  getSubgraph: () => GraphQLSchema,
-) {
+export function getSubgraphExecutor(options: RESTTransportEntry, getSubgraph: () => GraphQLSchema) {
   return createDefaultExecutor(
     processDirectives(getSubgraph(), {
       endpoint: options.location,

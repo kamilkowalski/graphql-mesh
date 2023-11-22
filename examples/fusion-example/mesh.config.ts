@@ -1,4 +1,6 @@
 import type { MeshDevCLIConfig } from '@graphql-mesh/dev-cli';
+import { loadGraphQLHTTPSubgraph } from '@graphql-mesh/dev-cli';
+import { MeshServeCLIConfig } from '@graphql-mesh/serve-cli';
 import { loadOpenAPISubgraph } from '@omnigraph/openapi';
 
 export const devConfig: MeshDevCLIConfig = {
@@ -9,10 +11,25 @@ export const devConfig: MeshDevCLIConfig = {
       }),
     },
     {
-      sourceHandler: loadOpenAPISubgraph('vaccination', {
-        source: 'http://localhost:4001/openapi.json',
-        ignoreErrorResponses: true,
+      sourceHandler: loadGraphQLHTTPSubgraph('vaccination', {
+        endpoint: 'http://localhost:4001/graphql',
       }),
     },
   ],
+};
+
+export const serveConfig: MeshServeCLIConfig = {
+  supergraph: './supergraph.graphql',
+  graphiql: {
+    defaultQuery: /* GraphQL */ `
+      query Test {
+        getPetById(petId: 1) {
+          __typename
+          id
+          name
+          vaccinated
+        }
+      }
+    `,
+  },
 };

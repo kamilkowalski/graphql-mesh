@@ -11,8 +11,8 @@ type Query {
   foos(ids: [ID!]!): [Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
-  id: ID! @source(subgraph: "B", name: "id")
+type Foo @source(subgraph: "A", name: "Foo") @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: $Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
+  id: ID! @source(subgraph: "A", name: "id") @source(subgraph: "B", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"
 `;
@@ -28,7 +28,7 @@ type Query {
   B_foos(ids: [ID!]!): [Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
+type Foo @source(subgraph: "A", name: "Foo") @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: $Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
   A_id: ID! @source(subgraph: "A", name: "id")
   B_id: ID! @source(subgraph: "B", name: "id")
   B_bar: String! @source(subgraph: "B", name: "bar")
@@ -53,7 +53,7 @@ type B_Query {
   foos(ids: [ID!]!): [B_Foo!]! @resolver(subgraph: "B", operation: "query foos($ids: [ID!]!) { foos(ids: $ids) }") @source(subgraph: "B", name: "foos")
 }
 
-type B_Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
+type B_Foo @source(subgraph: "B", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: $Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") {
   id: ID! @source(subgraph: "B", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"
@@ -73,8 +73,8 @@ type Query {
   cFoo: Foo! @foo @resolver(subgraph: "C", operation: "query cFoo { cFoo }") @source(subgraph: "C", name: "cFoo")
 }
 
-type Foo @source(subgraph: "C", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") @variable(subgraph: "C", name: "Foo_id", select: "id") {
-  id: ID! @source(subgraph: "C", name: "id")
+type Foo @source(subgraph: "A", name: "Foo") @source(subgraph: "B", name: "Foo") @source(subgraph: "C", name: "Foo") @resolver(subgraph: "B", operation: "query FooById($Foo_id: ID!) { foo(id: $Foo_id) }", kind: "FETCH") @resolver(subgraph: "B", operation: "query FoosByIds($Foo_id: [ID!]!) { foos(ids: $Foo_id) }", kind: "BATCH") @variable(subgraph: "A", name: "Foo_id", select: "id") @variable(subgraph: "B", name: "Foo_id", select: "id") @variable(subgraph: "C", name: "Foo_id", select: "id") {
+  id: ID! @source(subgraph: "A", name: "id") @source(subgraph: "B", name: "id") @source(subgraph: "C", name: "id")
   bar: String! @source(subgraph: "B", name: "bar")
 }"
 `;

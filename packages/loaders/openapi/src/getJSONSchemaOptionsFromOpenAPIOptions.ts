@@ -629,6 +629,5 @@ export async function getJSONSchemaOptionsFromOpenAPIOptions(
     fetch: fetchFn,
     schemaHeaders,
     operationHeaders,
-    handlerName: 'openapi',
   };
 }

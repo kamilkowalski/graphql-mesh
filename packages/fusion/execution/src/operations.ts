@@ -4,8 +4,9 @@ import {
   GraphQLSchema,
   Kind,
   OperationDefinitionNode,
+  valueFromASTUntyped,
 } from 'graphql';
-import { getRootTypeMap } from '@graphql-tools/utils';
+import { getRootTypeMap, isPromise } from '@graphql-tools/utils';
 import {
   createExecutableResolverOperationNodesWithDependencyMap,
   ExecutableResolverOperationNode,
@@ -14,7 +15,10 @@ import {
 } from './execution.js';
 import { FlattenedFieldNode, flattenSelections } from './flattenSelections.js';
 import { ResolverOperationNode, visitFieldNodeForTypeResolvers } from './query-planning.js';
-import { SerializedResolverOperationNode } from './serialization.js';
+import {
+  SerializedResolverOperationNode,
+  serializeExecutableResolverOperationNode,
+} from './serialization.js';
 
 export function planOperation(
   supergraph: GraphQLSchema,
@@ -40,12 +44,30 @@ export function planOperation(
     throw new Error(`No operation found with name ${operationName}`);
   }
 
+  const defaultVariables: Record<string, any> = Object.create(null);
+  operationAst.variableDefinitions?.forEach(variableDefinition => {
+    if (variableDefinition.defaultValue) {
+      defaultVariables[variableDefinition.variable.name.value] = valueFromASTUntyped(
+        variableDefinition.defaultValue,
+        defaultVariables,
+      );
+    }
+  });
+
   const flattenedFakeFieldNode: FlattenedFieldNode = {
     kind: Kind.FIELD,
     name: {
       kind: Kind.NAME,
       value: '__fake',
     },
+    arguments: operationAst.variableDefinitions?.map(variableDefinition => ({
+      kind: Kind.ARGUMENT,
+      name: variableDefinition.variable.name,
+      value: {
+        kind: Kind.VARIABLE,
+        name: variableDefinition.variable.name,
+      },
+    })),
     selectionSet: {
       kind: Kind.SELECTION_SET,
       selections: flattenSelections(operationAst.selectionSet.selections, fragments),
@@ -59,24 +81,38 @@ export function planOperation(
     throw new Error(`No root type found for operation type ${operationType}`);
   }
 
-  return visitFieldNodeForTypeResolvers('ROOT', flattenedFakeFieldNode, rootType, supergraph, {
-    currentVariableIndex: 0,
-  });
+  const planForFakeFieldNode = visitFieldNodeForTypeResolvers(
+    'ROOT',
+    flattenedFakeFieldNode,
+    rootType,
+    supergraph,
+    {
+      currentVariableIndex: 0,
+    },
+  );
+  return {
+    resolverOperationNodes: planForFakeFieldNode.resolverOperationNodes,
+    resolverDependencyFieldMap: planForFakeFieldNode.resolverDependencyFieldMap,
+    defaultVariables,
+  };
 }
 
 export interface ExecutableOperationPlan {
   resolverOperationNodes: ExecutableResolverOperationNode[];
   resolverDependencyFieldMap: Map<string, ExecutableResolverOperationNode[]>;
+  defaultVariables: Record<string, any>;
 }
 
 export interface NonExecutableOperationPlan {
   resolverOperationNodes: ResolverOperationNode[];
   resolverDependencyFieldMap: Map<string, ResolverOperationNode[]>;
+  defaultVariables: Record<string, any>;
 }
 
 export interface SerializableOperationPlan {
   resolverOperationNodes: SerializedResolverOperationNode[];
   resolverDependencyFieldMap: Map<string, SerializedResolverOperationNode[]>;
+  defaultVariables: Record<string, any>;
 }
 
 export function executeOperation({
@@ -94,12 +130,41 @@ export function executeOperation({
   variables?: Record<string, any>;
   context?: any;
 }) {
+  const executablePlan = createExecutablePlanForOperation({ supergraph, document, operationName });
+  return executeOperationPlan({ executablePlan, onExecute, variables, context });
+}
+
+export function createExecutablePlanForOperation({
+  supergraph,
+  document,
+  operationName,
+}: {
+  supergraph: GraphQLSchema;
+  document: DocumentNode;
+  operationName?: string;
+}): ExecutableOperationPlan {
   const plan = planOperation(supergraph, document, operationName);
   const executablePlan = createExecutableResolverOperationNodesWithDependencyMap(
     plan.resolverOperationNodes,
     plan.resolverDependencyFieldMap,
   );
-  return executeOperationPlan({ executablePlan, onExecute, variables, context });
+  return {
+    resolverOperationNodes: executablePlan.resolverOperationNodes,
+    resolverDependencyFieldMap: executablePlan.resolverDependencyFieldMap,
+    defaultVariables: plan.defaultVariables,
+  };
+}
+
+function removeInternalFieldsFromResponse(response: any): any {
+  if (Array.isArray(response)) {
+    return response.map(removeInternalFieldsFromResponse);
+  } else if (typeof response === 'object' && response != null) {
+    return Object.fromEntries(
+      Object.entries(response).filter(([key]) => !key.startsWith('__variable')),
+    );
+  } else {
+    return response;
+  }
 }
 
 export function executeOperationPlan({
@@ -113,11 +178,32 @@ export function executeOperationPlan({
   variables?: Record<string, any>;
   context: any;
 }) {
-  return executeResolverOperationNodesWithDependenciesInParallel({
+  const res$ = executeResolverOperationNodesWithDependenciesInParallel({
     context,
     resolverOperationNodes: executablePlan.resolverOperationNodes,
     fieldDependencyMap: executablePlan.resolverDependencyFieldMap,
-    inputVariableMap: new Map(Object.entries(variables)),
+    inputVariableMap: new Map([
+      ...Object.entries(executablePlan.defaultVariables),
+      ...Object.entries(variables),
+    ]),
     onExecute,
   });
+  if (isPromise(res$)) {
+    return res$.then(removeInternalFieldsFromResponse);
+  }
+  return removeInternalFieldsFromResponse(res$);
+}
+
+export function serializeExecutableOperationPlan(executablePlan: ExecutableOperationPlan) {
+  return {
+    resolverOperationNodes: executablePlan.resolverOperationNodes.map(node =>
+      serializeExecutableResolverOperationNode(node),
+    ),
+    resolverDependencyFieldMap: Object.fromEntries(
+      [...executablePlan.resolverDependencyFieldMap.entries()].map(([key, value]) => [
+        key,
+        value.map(serializeExecutableResolverOperationNode),
+      ]),
+    ),
+  };
 }
