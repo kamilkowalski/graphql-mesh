@@ -1,6 +1,5 @@
 import {
   DocumentNode,
-  ExecutionResult,
   FragmentDefinitionNode,
   GraphQLError,
   GraphQLSchema,
@@ -149,6 +148,7 @@ export function createExecutablePlanForOperation({
   const executablePlan = createExecutableResolverOperationNodesWithDependencyMap(
     plan.resolverOperationNodes,
     plan.resolverDependencyFieldMap,
+    0,
   );
   return {
     resolverOperationNodes: executablePlan.resolverOperationNodes,

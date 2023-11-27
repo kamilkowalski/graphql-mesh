@@ -6,6 +6,7 @@ import { parseAndCache, printCached } from './parseAndPrintWithCache.js';
 import { ResolverOperationNode } from './query-planning.js';
 
 export interface SerializedResolverOperationNode {
+  id?: number;
   subgraph: string;
   resolverOperationDocument: string;
   resolverDependencies?: SerializedResolverOperationNode[];
@@ -13,8 +14,11 @@ export interface SerializedResolverOperationNode {
   batch?: boolean;
 }
 
-export function serializeResolverOperationNode(resolverOperationNode: ResolverOperationNode) {
+export function serializeResolverOperationNode(
+  resolverOperationNode: ResolverOperationNode & { id?: number },
+) {
   const serializedNode: SerializedResolverOperationNode = {
+    id: resolverOperationNode.id,
     subgraph: resolverOperationNode.subgraph,
     resolverOperationDocument: printCached(resolverOperationNode.resolverOperationDocument),
   };
@@ -77,13 +81,11 @@ export function deserializeResolverOperationNode(
 export function deserializeResolverOperationNodeExecutable(
   serializedNode: SerializedResolverOperationNode,
 ) {
-  return createExecutableResolverOperationNode(deserializeResolverOperationNode(serializedNode));
+  return createExecutableResolverOperationNode(deserializeResolverOperationNode(serializedNode), 0);
 }
 
 export function serializeExecutableResolverOperationNode(
   executableResolverOperationNode: ExecutableResolverOperationNode,
 ) {
-  return serializeResolverOperationNode(
-    createExecutableResolverOperationNode(executableResolverOperationNode),
-  );
+  return serializeResolverOperationNode(executableResolverOperationNode);
 }

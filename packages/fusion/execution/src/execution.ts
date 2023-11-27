@@ -19,6 +19,7 @@ export type OnExecuteFn = (
 ) => ReturnType<Executor>;
 
 export interface ExecutableResolverOperationNode extends ResolverOperationNode {
+  id: number;
   providedVariablePathMap: Map<string, string[]>;
   requiredVariableNames: Set<string>;
   exportPath: string[];
@@ -37,6 +38,7 @@ function deserializeGraphQLError(error: any) {
 
 export function createExecutableResolverOperationNode(
   resolverOperationNode: ResolverOperationNode,
+  currentId: number,
 ): ExecutableResolverOperationNode {
   const providedVariablePathMap = new Map<string, string[]>();
   const exportPath: string[] = [];
@@ -65,7 +67,7 @@ export function createExecutableResolverOperationNode(
     const batchedNodes: ExecutableResolverOperationNode[] = [];
     const nonBatchedNodes: ExecutableResolverOperationNode[] = [];
     for (const node of nodes) {
-      const executableNode = createExecutableResolverOperationNode(node);
+      const executableNode = createExecutableResolverOperationNode(node, currentId++);
       if (node.batch) {
         batchedNodes.push(executableNode);
       } else {
@@ -88,7 +90,7 @@ export function createExecutableResolverOperationNode(
   const resolverDependencies = [];
 
   for (const node of resolverOperationNode.resolverDependencies) {
-    const executableNode = createExecutableResolverOperationNode(node);
+    const executableNode = createExecutableResolverOperationNode(node, currentId++);
     if (node.batch) {
       batchedResolverDependencies.push(executableNode);
     } else {
@@ -97,6 +99,7 @@ export function createExecutableResolverOperationNode(
   }
 
   return {
+    id: currentId++,
     ...resolverOperationNode,
     resolverDependencies,
     batchedResolverDependencies,
@@ -111,13 +114,17 @@ export function createExecutableResolverOperationNode(
 export function createExecutableResolverOperationNodesWithDependencyMap(
   resolverOperationNodes: ResolverOperationNode[],
   resolverDependencyFieldMap: Map<string, ResolverOperationNode[]>,
+  currentId: number,
 ) {
-  const newResolverOperationNodes = resolverOperationNodes.map(
-    createExecutableResolverOperationNode,
+  const newResolverOperationNodes = resolverOperationNodes.map(node =>
+    createExecutableResolverOperationNode(node, currentId++),
   );
   const newResolverDependencyMap = new Map<string, ExecutableResolverOperationNode[]>();
   for (const [key, nodes] of resolverDependencyFieldMap) {
-    newResolverDependencyMap.set(key, nodes.map(createExecutableResolverOperationNode));
+    newResolverDependencyMap.set(
+      key,
+      nodes.map(node => createExecutableResolverOperationNode(node, currentId++)),
+    );
   }
   return {
     resolverOperationNodes: newResolverOperationNodes,
@@ -127,6 +134,7 @@ export function createExecutableResolverOperationNodesWithDependencyMap(
 
 export function createResolverOperationNodeFromExecutable(
   executableNode: ExecutableResolverOperationNode,
+  currentId: number,
 ) {
   const resolverOpNode: ResolverOperationNode = {
     subgraph: executableNode.subgraph,
@@ -135,8 +143,8 @@ export function createResolverOperationNodeFromExecutable(
     resolverDependencyFieldMap: executableNode.resolverDependencyFieldMap,
   };
 
-  resolverOpNode.resolverDependencies = executableNode.resolverDependencies.map(
-    createResolverOperationNodeFromExecutable,
+  resolverOpNode.resolverDependencies = executableNode.resolverDependencies.map(node =>
+    createResolverOperationNodeFromExecutable(node, currentId++),
   );
 
   resolverOpNode.resolverDependencyFieldMap = new Map(
@@ -150,7 +158,7 @@ export function createResolverOperationNodeFromExecutable(
     resolverOpNode.batch = true;
     for (const batchedResolverDependency of executableNode.batchedResolverDependencies) {
       resolverOpNode.resolverDependencies.push(
-        createResolverOperationNodeFromExecutable(batchedResolverDependency),
+        createResolverOperationNodeFromExecutable(batchedResolverDependency, currentId++),
       );
     }
   }
@@ -389,11 +397,15 @@ export function executeResolverOperationNode({
 
   function handleResult(result: any) {
     result?.errors?.forEach((error: any) => {
+      error = deserializeGraphQLError(error);
       const errorPath = [
         ...path,
         ...(error.path?.filter((p: number | string) => p.toString() !== '__export') || []),
       ];
-      errors.push(relocatedError(deserializeGraphQLError(error), errorPath));
+      error = relocatedError(error, errorPath);
+      error.extensions ||= {};
+      error.extensions.planNodeId = resolverOperationNode.id;
+      errors.push(error);
     });
     if (result?.data == null) {
       return null;
