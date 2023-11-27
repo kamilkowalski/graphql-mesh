@@ -1,7 +1,13 @@
 /* eslint-disable no-inner-declarations */
-import { DocumentNode, Kind, visit } from 'graphql';
+import { DocumentNode, GraphQLError, Kind, visit } from 'graphql';
 import _ from 'lodash';
-import { createGraphQLError, Executor, isAsyncIterable, isPromise } from '@graphql-tools/utils';
+import {
+  createGraphQLError,
+  Executor,
+  isAsyncIterable,
+  isPromise,
+  relocatedError,
+} from '@graphql-tools/utils';
 import { ResolverOperationNode } from './query-planning.js';
 import { visitResolutionPath } from './visitResolutionPath.js';
 
@@ -169,12 +175,16 @@ export function executeResolverOperationNodesWithDependenciesInParallel({
   onExecute,
   obj = {},
   context,
+  path,
+  errors,
 }: {
   context: any;
   resolverOperationNodes: ExecutableResolverOperationNode[];
   fieldDependencyMap: Map<string, ExecutableResolverOperationNode[]>;
   inputVariableMap: Map<string, any>;
   onExecute: OnExecuteFn;
+  path: string[];
+  errors: GraphQLError[];
   obj?: any;
 }) {
   const dependencyPromises: PromiseLike<any>[] = [];
@@ -187,14 +197,18 @@ export function executeResolverOperationNodesWithDependenciesInParallel({
       inputVariableMap,
       onExecute,
       context,
+      path,
+      errors,
     });
     function handleDepOpResult(depOpResult: {
       exported: any;
       outputVariableMap: Map<string, any>;
     }) {
-      Object.assign(obj, depOpResult.exported);
-      for (const [key, value] of depOpResult.outputVariableMap) {
-        outputVariableMap.set(key, value);
+      if (depOpResult?.exported != null) {
+        Object.assign(obj, depOpResult.exported);
+        for (const [key, value] of depOpResult.outputVariableMap) {
+          outputVariableMap.set(key, value);
+        }
       }
     }
     if (isPromise(depOpResult$)) {
@@ -214,12 +228,16 @@ export function executeResolverOperationNodesWithDependenciesInParallel({
         inputVariableMap,
         onExecute,
         context,
+        path: [...path, fieldName],
+        errors,
       });
       function handleFieldOpResult(fieldOpResult: { exported: any; listed?: boolean }) {
-        if (fieldOpResult.listed) {
-          listed = true;
+        if (fieldOpResult != null) {
+          if (fieldOpResult.listed) {
+            listed = true;
+          }
+          fieldOpResults.push(fieldOpResult.exported);
         }
-        fieldOpResults.push(fieldOpResult.exported);
       }
       if (isPromise(fieldOpResult$)) {
         fieldOpPromises.push(fieldOpResult$.then(handleFieldOpResult));
@@ -285,11 +303,15 @@ export function executeResolverOperationNode({
   inputVariableMap,
   onExecute,
   context,
+  path,
+  errors,
 }: {
   resolverOperationNode: ExecutableResolverOperationNode;
   inputVariableMap: Map<string, any>;
   onExecute: OnExecuteFn;
   context: any;
+  path: string[];
+  errors: GraphQLError[];
 }) {
   const variablesForOperation: Record<string, any> = {};
 
@@ -309,15 +331,19 @@ export function executeResolverOperationNode({
           inputVariableMap: itemInputVariableMap,
           onExecute,
           context,
+          path: [...path, varIndex],
+          errors,
         });
         if (isPromise(itemResult$)) {
           promises.push(
             itemResult$.then(resolvedVarValueItem => {
-              results[varIndex] = resolvedVarValueItem.exported;
-              outputVariableMaps[varIndex] = resolvedVarValueItem.outputVariableMap;
+              if (resolvedVarValueItem != null) {
+                results[varIndex] = resolvedVarValueItem.exported;
+                outputVariableMaps[varIndex] = resolvedVarValueItem.outputVariableMap;
+              }
             }),
           );
-        } else {
+        } else if (itemResult$ != null) {
           results[varIndex] = itemResult$.exported;
           outputVariableMaps[varIndex] = itemResult$.outputVariableMap;
         }
@@ -362,11 +388,15 @@ export function executeResolverOperationNode({
   }
 
   function handleResult(result: any) {
-    if (result.errors) {
-      if (result.errors.length === 1) {
-        throw deserializeGraphQLError(result.errors[0]);
-      }
-      throw new AggregateError(result.errors.map(deserializeGraphQLError));
+    result?.errors?.forEach((error: any) => {
+      const errorPath = [
+        ...path,
+        ...(error.path?.filter((p: number | string) => p.toString() !== '__export') || []),
+      ];
+      errors.push(relocatedError(deserializeGraphQLError(error), errorPath));
+    });
+    if (result?.data == null) {
+      return null;
     }
     const outputVariableMap = new Map();
     const exported = _.get(result.data, resolverOperationNode.exportPath);
@@ -385,6 +415,8 @@ export function executeResolverOperationNode({
         onExecute,
         obj: exportedList,
         context,
+        path,
+        errors,
       });
     }
     function handleExportedItem(exportedItem: any) {
@@ -402,6 +434,8 @@ export function executeResolverOperationNode({
         onExecute,
         obj: exportedItem,
         context,
+        path,
+        errors,
       });
     }
     let depsResult$: PromiseLike<any> | any;

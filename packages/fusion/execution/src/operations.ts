@@ -1,6 +1,8 @@
 import {
   DocumentNode,
+  ExecutionResult,
   FragmentDefinitionNode,
+  GraphQLError,
   GraphQLSchema,
   Kind,
   OperationDefinitionNode,
@@ -160,17 +162,32 @@ function removeInternalFieldsFromResponse(response: any): any {
     return response.map(removeInternalFieldsFromResponse);
   } else if (typeof response === 'object' && response != null) {
     return Object.fromEntries(
-      Object.entries(response).filter(([key]) => !key.startsWith('__variable')),
+      Object.entries(response)
+        .filter(([key]) => !key.startsWith('__variable'))
+        .map(([key, value]) => [key, removeInternalFieldsFromResponse(value)]),
     );
   } else {
     return response;
   }
 }
 
+function prepareExecutionResult(
+  planExecutionResult: { exported: any; outputVariableMap: Map<string, any> },
+  errors: GraphQLError[],
+) {
+  return {
+    data:
+      planExecutionResult?.exported != null
+        ? removeInternalFieldsFromResponse(planExecutionResult.exported)
+        : undefined,
+    errors: errors.length > 0 ? errors : undefined,
+  };
+}
+
 export function executeOperationPlan({
   executablePlan,
   onExecute,
-  variables,
+  variables = {},
   context,
 }: {
   executablePlan: ExecutableOperationPlan;
@@ -178,6 +195,7 @@ export function executeOperationPlan({
   variables?: Record<string, any>;
   context: any;
 }) {
+  const errors: GraphQLError[] = [];
   const res$ = executeResolverOperationNodesWithDependenciesInParallel({
     context,
     resolverOperationNodes: executablePlan.resolverOperationNodes,
@@ -187,11 +205,13 @@ export function executeOperationPlan({
       ...Object.entries(variables),
     ]),
     onExecute,
+    path: [],
+    errors,
   });
   if (isPromise(res$)) {
-    return res$.then(removeInternalFieldsFromResponse);
+    return res$.then(res => prepareExecutionResult(res, errors));
   }
-  return removeInternalFieldsFromResponse(res$);
+  return prepareExecutionResult(res$, errors);
 }
 
 export function serializeExecutableOperationPlan(executablePlan: ExecutableOperationPlan) {

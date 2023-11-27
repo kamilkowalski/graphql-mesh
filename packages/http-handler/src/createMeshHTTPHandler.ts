@@ -94,7 +94,7 @@ export function createMeshHTTPHandler<TServerContext>(
           }
           return getSubgraphExecutor(transportEntry, getSubgraph);
         }
-        logger.info(`Loading transport: ${transportEntry.kind}`);
+        logger.info(`Loading ${transportEntry.kind} transport`);
         const importRes$ = transportImportFn(transportEntry.kind);
         if (isPromise(importRes$)) {
           return importRes$.then(handleImportResult);

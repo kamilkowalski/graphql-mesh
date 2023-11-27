@@ -2,9 +2,11 @@
 import cluster from 'cluster';
 import { availableParallelism } from 'os';
 import { dirname, isAbsolute, join } from 'path';
-import Spinnies from 'spinnies';
+import { GraphQLSchema } from 'graphql';
 import { App, SSLApp } from 'uWebSockets.js';
 import { createMeshHTTPHandler } from '@graphql-mesh/http-handler';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { DefaultLogger } from '@graphql-mesh/utils';
 import { GitLoader } from '@graphql-tools/git-loader';
 import { GithubLoader } from '@graphql-tools/github-loader';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
@@ -12,20 +14,32 @@ import { loadSchema } from '@graphql-tools/load';
 import { UrlLoader } from '@graphql-tools/url-loader';
 import { MeshServeCLIConfig } from './types';
 
-export const spinnies = new Spinnies({
-  color: 'white',
-  succeedColor: 'white',
-  failColor: 'red',
-  succeedPrefix: '✔',
-  failPrefix: '💥',
-  spinner: { interval: 80, frames: ['/', '|', '\\', '--'] },
-});
-
 export async function runServeCLI(
   processExit = (exitCode: number) => process.exit(exitCode),
 ): Promise<void | never> {
-  const prefix = `🕸️ GraphQL Mesh`;
-  spinnies.add('main', { text: `${prefix} - Starting` });
+  const prefix = cluster.worker?.id ? `🕸️  Mesh Worker#${cluster.worker.id}` : `🕸️  Mesh`;
+  const workerLogger = new DefaultLogger(prefix);
+  workerLogger.info(`Starting`);
+
+  const meshServeCLIConfigFileName = process.env.MESH_SERVE_CONFIG_FILE_NAME || 'mesh.config.ts';
+  const meshServeCLIConfigFilePath =
+    process.env.MESH_SERVE_CONFIG_FILE_PATH || join(process.cwd(), meshServeCLIConfigFileName);
+
+  workerLogger.info(`Loading configuration from ${meshServeCLIConfigFilePath}`);
+  const loadedConfig: { serveConfig: MeshServeCLIConfig } = await import(
+    meshServeCLIConfigFilePath
+  ).catch(e => {
+    workerLogger.error(`Failed to load configuration from ${meshServeCLIConfigFilePath}`, e);
+    return processExit(1);
+  });
+
+  const meshServeCLIConfig = loadedConfig.serveConfig || {
+    supergraph: './supergraph.graphql',
+  };
+  workerLogger.info(`Loaded configuration from ${meshServeCLIConfigFilePath}`);
+
+  const supergraphPath = meshServeCLIConfig.supergraph || './supergraph.graphql';
+
   if (cluster.isPrimary) {
     let forkNum: number;
     if (!process.env.FORK || process.env.FORK === 'true') {
@@ -40,133 +54,116 @@ export async function runServeCLI(
       forkNum = parseInt(process.env.FORK);
     }
 
+    if (typeof supergraphPath === 'string' && !supergraphPath.includes('://')) {
+      const parcelWatcher$ = import('@parcel/watcher');
+      parcelWatcher$
+        .catch(e => {
+          httpHandler.logger.error(
+            `If you want to enable hot reloading on ${supergraphPath}, install "@parcel/watcher"`,
+            e,
+          );
+        })
+        .then(parcelWatcher => {
+          if (parcelWatcher) {
+            const absoluteSupergraphPath = isAbsolute(supergraphPath)
+              ? supergraphPath
+              : join(process.cwd(), supergraphPath);
+            const supergraphDir = dirname(absoluteSupergraphPath);
+            return parcelWatcher
+              .subscribe(supergraphDir, (err, events) => {
+                if (err) {
+                  workerLogger.error(err);
+                  return;
+                }
+                if (events.some(event => event.path === absoluteSupergraphPath)) {
+                  workerLogger.info(`Supergraph changed`);
+                  if (forkNum > 1) {
+                    for (const workerId in cluster.workers) {
+                      cluster.workers[workerId].send('invalidateSupergraph');
+                    }
+                  } else {
+                    httpHandler.invalidateSupergraph();
+                  }
+                }
+              })
+              .then(subscription => {
+                registerTerminateHandler(eventName => {
+                  workerLogger.info(
+                    `Closing watcher for ${absoluteSupergraphPath} for ${eventName}`,
+                  );
+                  return subscription.unsubscribe();
+                });
+              });
+          }
+          return null;
+        })
+        .catch(e => {
+          workerLogger.error(`Failed to watch ${supergraphPath}`, e);
+        });
+    }
+
     if (forkNum > 1) {
-      spinnies.update('main', { text: `Forking ${forkNum} Mesh Workers` });
+      workerLogger.info(`Forking ${forkNum} Mesh Workers`);
       for (let i = 0; i < forkNum; i++) {
-        spinnies.update('main', { text: `Forking Mesh Worker #${i}` });
+        workerLogger.info(`Forking Mesh Worker #${i}`);
         const worker = cluster.fork();
         registerTerminateHandler(eventName => {
-          spinnies.add(`worker-${worker.id}`, {
-            text: `Closing Mesh Worker #${i} for ${eventName}`,
-          });
+          workerLogger.info(`Closing Mesh Worker #${i} for ${eventName}`);
           worker.kill(eventName);
-          spinnies.succeed(`worker-${worker.id}`, {
-            text: `Closed Mesh Worker #${i} for ${eventName}`,
-          });
+          workerLogger.info(`Closed Mesh Worker #${i} for ${eventName}`);
         });
-        spinnies.update('main', { text: `Forked Mesh Worker #${i}` });
+        workerLogger.info(`Forked Mesh Worker #${i}`);
       }
-      spinnies.succeed('main', { text: `Forked ${forkNum} Mesh Workers` });
+      workerLogger.info(`Forked ${forkNum} Mesh Workers`);
+
       return;
     }
   }
 
-  const meshServeCLIConfigFileName = process.env.MESH_SERVE_CONFIG_FILE_NAME || 'mesh.config.ts';
-  const meshServeCLIConfigFilePath =
-    process.env.MESH_SERVE_CONFIG_FILE_PATH || join(process.cwd(), meshServeCLIConfigFileName);
-
-  spinnies.add('config', {
-    text: `${prefix} - Loading configuration from ${meshServeCLIConfigFilePath}`,
-  });
-  const loadedConfig: { serveConfig: MeshServeCLIConfig } = await import(
-    meshServeCLIConfigFilePath
-  ).catch(e => {
-    spinnies.fail('config', {
-      text: `${prefix} - Failed to load configuration from ${meshServeCLIConfigFilePath}`,
-    });
-    console.error(e);
-    return processExit(1);
-  });
-  const meshServeCLIConfig = loadedConfig.serveConfig || {
-    supergraph: './supergraph.graphql',
-  };
-  spinnies.succeed('config', {
-    text: `${prefix} - Loaded configuration from ${meshServeCLIConfigFilePath}`,
-  });
   const port = meshServeCLIConfig.port || 4000;
   const host = meshServeCLIConfig.host || 'localhost';
-  const supergraphPath = meshServeCLIConfig.supergraph || './supergraph.graphql';
   const httpHandler = createMeshHTTPHandler({
+    logging: workerLogger,
     ...meshServeCLIConfig,
-    supergraph() {
-      spinnies.add('supergraph', {
-        text: `${prefix} - Loading Supergraph from ${meshServeCLIConfig.supergraph}`,
-      });
-      return loadSchema(meshServeCLIConfig.supergraph || './supergraph.graphql', {
+    supergraph(): Promise<GraphQLSchema> {
+      workerLogger.info(`Loading Supergraph from ${supergraphPath}`);
+      return loadSchema(supergraphPath, {
         loaders: [new GraphQLFileLoader(), new UrlLoader(), new GithubLoader(), new GitLoader()],
         assumeValid: true,
         assumeValidSDL: true,
       })
         .then(supergraph => {
-          spinnies.succeed('supergraph', {
-            text: `${prefix} - Loaded Supergraph from ${meshServeCLIConfig.supergraph}`,
-          });
+          workerLogger.info(`Loaded Supergraph from ${supergraphPath}`);
           return supergraph;
         })
         .catch(e => {
-          spinnies.fail('supergraph', {
-            text: `${prefix} - Failed to load Supergraph from ${meshServeCLIConfig.supergraph}`,
-          });
+          workerLogger.error(`Failed to load Supergraph from ${supergraphPath}`, e);
           throw e;
         });
     },
   });
-  if (typeof supergraphPath === 'string' && !supergraphPath.includes('://')) {
-    const parcelWatcher$ = import('@parcel/watcher');
-    parcelWatcher$
-      .catch(e => {
-        httpHandler.logger.error(
-          `If you want to enable hot reloading on ${supergraphPath}, install "@parcel/watcher"`,
-          e,
-        );
-      })
-      .then(parcelWatcher => {
-        if (parcelWatcher) {
-          const absoluteSupergraphPath = isAbsolute(supergraphPath)
-            ? supergraphPath
-            : join(process.cwd(), supergraphPath);
-          httpHandler.logger.info(`Watching ${absoluteSupergraphPath} for changes`);
-          return parcelWatcher
-            .subscribe(dirname(absoluteSupergraphPath), () => {
-              httpHandler.logger.info(`Supergraph ${absoluteSupergraphPath} changed`);
-              httpHandler.invalidateSupergraph();
-            })
-            .then(subscription => {
-              registerTerminateHandler(eventName => {
-                httpHandler.logger.info(
-                  `Closing watcher for ${absoluteSupergraphPath} for ${eventName}`,
-                );
-                return subscription.unsubscribe();
-              });
-            });
-        }
-        return null;
-      })
-      .catch(e => {
-        httpHandler.logger.error(`Failed to watch ${supergraphPath}`, e);
-      });
-  }
+  process.on('message', message => {
+    if (message === 'invalidateSupergraph') {
+      workerLogger.info(`Invalidating Supergraph`);
+      httpHandler.invalidateSupergraph();
+    }
+  });
   const app = meshServeCLIConfig.sslCredentials ? SSLApp(meshServeCLIConfig.sslCredentials) : App();
   const protocol = meshServeCLIConfig.sslCredentials ? 'https' : 'http';
   app.any('/*', httpHandler);
-  spinnies.add('start-server', { text: `${prefix} - Starting server` });
+  workerLogger.info(`Starting server on ${protocol}://${host}:${port}`);
   app.listen(host, port, function listenCallback(listenSocket) {
     if (listenSocket) {
-      spinnies.succeed('start-server', {
-        text: `${prefix} - Started server on ${protocol}://${host}:${port}`,
-      });
+      workerLogger.info(`Started server on ${protocol}://${host}:${port}`);
       registerTerminateHandler(eventName => {
-        spinnies.fail('listen', {
-          text: `${prefix} - Closing ${protocol}://${host}:${port} for ${eventName}`,
-        });
+        workerLogger.info(`Closing ${protocol}://${host}:${port} for ${eventName}`);
         app.close();
       });
     } else {
-      spinnies.fail('start-server', { text: `${prefix} - Failed to start server` });
+      workerLogger.error(`Failed to start server on ${protocol}://${host}:${port}`);
       processExit(1);
     }
   });
-  spinnies.remove('main');
 }
 
 const terminateEvents = ['SIGINT', 'SIGTERM'] as const;

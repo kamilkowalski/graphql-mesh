@@ -3280,7 +3280,7 @@
     dataloader "^2.2.2"
     tslib "^2.5.0"
 
-"@graphql-tools/executor-graphql-ws@^1.0.0":
+"@graphql-tools/executor-graphql-ws@^1.0.0", "@graphql-tools/executor-graphql-ws@^1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@graphql-tools/executor-graphql-ws/-/executor-graphql-ws-1.1.0.tgz#7727159ebaa9df4dc793d0d02e74dd1ca4a7cc60"
   integrity sha512-yM67SzwE8rYRpm4z4AuGtABlOp9mXXVy6sxXnTJRoYIdZrmDbKVfIY+CpZUJCqS0FX3xf2+GoHlsj7Qswaxgcg==
@@ -3327,10 +3327,10 @@
     tslib "^2.4.0"
     value-or-promise "^1.0.12"
 
-"@graphql-tools/federation@^1.1.0", "@graphql-tools/federation@^1.1.1", "@graphql-tools/federation@^1.1.10":
-  version "1.1.10"
-  resolved "https://registry.yarnpkg.com/@graphql-tools/federation/-/federation-1.1.10.tgz#999f78d9790e9e8ce2607c9f8601d233c7916366"
-  integrity sha512-H51qTYwbtfIYBO1uHXlImRWzo9tknSoIGBgJckDh+hdxJx43sZaMjJiLHc2DjRc/A8d2Bf0bi0HbH++HqOos/w==
+"@graphql-tools/federation@^1.1.12":
+  version "1.1.12"
+  resolved "https://registry.yarnpkg.com/@graphql-tools/federation/-/federation-1.1.12.tgz#ee404cb7b9ffe1000f76a5cb8d31379935a90c89"
+  integrity sha512-umKJraxnzfIee572h9MyOpmURCBwT7NwmvpaM4zGsKtLiQLCDL+eBEuuMSLnrleG5KTO/w5EZvbYUfFwX1CvHw==
   dependencies:
     "@graphql-tools/delegate" "^10.0.1"
     "@graphql-tools/executor-http" "^1.0.0"
@@ -5426,11 +5426,6 @@
   version "0.27.8"
   resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.27.8.tgz#6667fac16c436b5434a387a34dedb013198f6e6e"
   integrity sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==
-
-"@sinclair/typebox@^0.31.23":
-  version "0.31.28"
-  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.31.28.tgz#b68831e7bc7d09daac26968ea32f42bedc968ede"
-  integrity sha512-/s55Jujywdw/Jpan+vsy6JZs1z2ZTGxTmbZTPiuSL2wz9mfzA2gN1zzaqmvfi4pq+uOt7Du85fkiwv5ymW84aQ==
 
 "@sindresorhus/is@^4.0.0":
   version "4.6.0"
@@ -12012,6 +12007,7 @@ fets@^0.2.0:
     zod "^3.21.4"
     zod-to-json-schema "^3.20.5"
 
+<<<<<<< HEAD
 fets@^0.6.3:
   version "0.6.3"
   resolved "https://registry.yarnpkg.com/fets/-/fets-0.6.3.tgz#c60f6194e538f4a45efa33491ddcc214d4961d30"
@@ -12028,6 +12024,8 @@ fets@^0.6.3:
     tslib "^2.3.1"
 
 >>>>>>> b1306b2a3 (Automatic type merging)
+=======
+>>>>>>> 4a00476bf (Error handling)
 figures@^3.0.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/figures/-/figures-3.2.0.tgz#625c18bd293c604dc4a8ddb2febf0c88341746af"

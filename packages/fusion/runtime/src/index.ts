@@ -8,8 +8,7 @@ import {
   introspectionFromSchema,
   isSchema,
 } from 'graphql';
-import { createLRUCache, Plugin } from 'graphql-yoga';
-import { getDocumentString } from '@envelop/core';
+import type { Plugin } from 'graphql-yoga';
 import {
   createExecutablePlanForOperation,
   ExecutableOperationPlan,
@@ -17,7 +16,13 @@ import {
   extractSubgraphFromSupergraph,
   serializeExecutableOperationPlan,
 } from '@graphql-mesh/fusion-execution';
-import { ExecutionRequest, Executor, getDirective, isPromise } from '@graphql-tools/utils';
+import {
+  ExecutionRequest,
+  Executor,
+  getDirective,
+  isPromise,
+  memoize2of4,
+} from '@graphql-tools/utils';
 
 export type TransportEntry = {
   kind: string;
@@ -27,27 +32,43 @@ export type TransportEntry = {
 };
 
 export function getSubgraphTransportMapFromSupergraph(supergraph: GraphQLSchema) {
-  const transportDirectives = getDirective(supergraph, supergraph, 'transport');
   const subgraphTransportEntryMap: Record<string, TransportEntry> = {};
-  for (const { kind, subgraph, location, headers, ...options } of transportDirectives) {
-    subgraphTransportEntryMap[subgraph] = {
-      kind,
-      location,
-      headers,
-      options,
-    };
+  const transportDirectives = getDirective(supergraph, supergraph, 'transport');
+  if (transportDirectives?.length) {
+    for (const { kind, subgraph, location, headers, ...options } of transportDirectives) {
+      subgraphTransportEntryMap[subgraph] = {
+        kind,
+        location,
+        headers,
+        options,
+      };
+    }
   }
-
   return subgraphTransportEntryMap;
 }
+
+export const getMemoizedExecutionPlanForOperation = memoize2of4(
+  function getMemoizedExecutionPlanForOperation(
+    supergraph: GraphQLSchema,
+    document: DocumentNode,
+    operationName?: string,
+    _random?: number,
+  ) {
+    return createExecutablePlanForOperation({
+      supergraph,
+      document,
+      operationName,
+    });
+  },
+);
 
 export function getExecutorForSupergraph(
   supergraph: GraphQLSchema,
   getTransportExecutor: (
     transportEntry: TransportEntry,
     getSubgraph: () => GraphQLSchema,
+    subgraphName: string,
   ) => Executor | Promise<Executor>,
-  planCache: PlanCache,
   plugins?: SupergraphPlugin[],
 ): Executor {
   const onSubgraphExecuteHooks: OnSubgraphExecuteHook[] = [];
@@ -79,10 +100,10 @@ export function getExecutorForSupergraph(
                 const onSubgraphExecuteDoneHook = await onSubgraphExecute({
                   supergraph,
                   subgraphName,
-                  transportKind: transportEntry.kind,
-                  transportLocation: transportEntry.location,
-                  transportHeaders: transportEntry.headers,
-                  transportOptions: transportEntry.options,
+                  transportKind: transportEntry?.kind,
+                  transportLocation: transportEntry?.location,
+                  transportHeaders: transportEntry?.headers,
+                  transportOptions: transportEntry?.options,
                   executionRequest: subgraphExecReq,
                   executor: currentExecutor,
                   setExecutor(newExecutor: Executor) {
@@ -111,8 +132,12 @@ export function getExecutorForSupergraph(
           return currentExecutor;
         }
         executor = function lazyExecutor(subgraphExecReq: ExecutionRequest) {
-          const executor$ = getTransportExecutor(transportEntry, () =>
-            extractSubgraphFromSupergraph(subgraphName, supergraph),
+          const executor$ = getTransportExecutor(
+            transportEntry,
+            function getSubgraph() {
+              return extractSubgraphFromSupergraph(subgraphName, supergraph);
+            },
+            subgraphName,
           );
           if (isPromise(executor$)) {
             return executor$.then(executor_ => {
@@ -128,48 +153,34 @@ export function getExecutorForSupergraph(
       }
       return executor({ document, variables, context });
     }
-    const documentStr = getDocumentString(execReq.document);
-    function handleCacheResult(cachedPlanRes: ExecutableOperationPlan) {
-      if (!cachedPlanRes) {
-        cachedPlanRes = createExecutablePlanForOperation({
-          supergraph,
-          document: execReq.document,
-          operationName: execReq.operationName,
-        });
-        execReq.context?.waitUntil(planCache.set(documentStr, cachedPlanRes));
-      }
-      function handleOpExecResult(opExecRes: {
-        exported: any;
-        outputVariableMap: Map<string, any>;
-      }) {
-        if (globalThis.process?.env?.DEBUG) {
-          return {
-            data: opExecRes.exported,
-            extensions: {
-              operationPlan: serializeExecutableOperationPlan(cachedPlanRes),
-            },
-          };
-        }
+
+    const executablePlan = getMemoizedExecutionPlanForOperation(
+      supergraph,
+      execReq.document,
+      execReq.operationName,
+    );
+
+    function handleOpExecResult(opExecRes: ExecutionResult): any {
+      if (globalThis.process?.env?.DEBUG) {
         return {
-          data: opExecRes.exported,
+          ...opExecRes,
+          extensions: {
+            operationPlan: serializeExecutableOperationPlan(executablePlan),
+          },
         };
       }
-      const opExecRes$ = executeOperationPlan({
-        executablePlan: cachedPlanRes,
-        onExecute: onSubgraphExecute,
-        variables: execReq.variables,
-        context: execReq.context,
-      });
-      if (isPromise(opExecRes$)) {
-        return opExecRes$.then(handleOpExecResult);
-      }
-      return handleOpExecResult(opExecRes$);
+      return opExecRes;
     }
-    const cachedPlanRes$ = planCache.get(documentStr);
-    if (isPromise(cachedPlanRes$)) {
-      return cachedPlanRes$.then(handleCacheResult);
+    const opExecRes$ = executeOperationPlan({
+      executablePlan,
+      onExecute: onSubgraphExecute,
+      variables: execReq.variables,
+      context: execReq.context,
+    });
+    if (isPromise(opExecRes$)) {
+      return opExecRes$.then(handleOpExecResult);
     }
-    return handleCacheResult(cachedPlanRes$);
+    return handleOpExecResult(opExecRes$);
   };
 }
 
@@ -187,6 +198,7 @@ export interface YogaSupergraphPluginOptions {
   getTransportExecutor(
     transportEntry: TransportEntry,
     getSubgraph: () => GraphQLSchema,
+    subgraphName: string,
   ): Executor | Promise<Executor>;
   planCache?: PlanCache;
   polling?: number;
@@ -226,28 +238,17 @@ export function useSupergraph(
   let supergraph: GraphQLSchema;
   let executeFn: typeof execute;
   let plugins: SupergraphPlugin[];
-  const planCache: PlanCache = opts.planCache || createLRUCache();
   function getAndSetSupergraph(): Promise<void> | void {
     const supergraph$ = opts.getSupergraph();
     if (isPromise(supergraph$)) {
       return supergraph$.then(supergraph_ => {
         supergraph = ensureSchema(supergraph_);
-        const executor = getExecutorForSupergraph(
-          supergraph,
-          opts.getTransportExecutor,
-          planCache,
-          plugins,
-        );
+        const executor = getExecutorForSupergraph(supergraph, opts.getTransportExecutor, plugins);
         executeFn = getExecuteFnFromExecutor(executor);
       });
     } else {
       supergraph = ensureSchema(supergraph$);
-      const executor = getExecutorForSupergraph(
-        supergraph,
-        opts.getTransportExecutor,
-        planCache,
-        plugins,
-      );
+      const executor = getExecutorForSupergraph(supergraph, opts.getTransportExecutor, plugins);
       executeFn = getExecuteFnFromExecutor(executor);
     }
   }
