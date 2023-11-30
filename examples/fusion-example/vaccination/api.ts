@@ -6,7 +6,7 @@ export const vaccinationApi = createYoga({
       scalar BigInt
 
       type Query {
-        petById(id: BigInt!): Pet
+        pet_by_id(id: BigInt!): Pet
       }
 
       type Pet {
@@ -16,7 +16,7 @@ export const vaccinationApi = createYoga({
     `,
     resolvers: {
       Query: {
-        petById: async (root, args, context, info) => {
+        pet_by_id: async (root, args, context, info) => {
           return {
             id: args.id,
             vaccinated: Math.random() > 0.5,

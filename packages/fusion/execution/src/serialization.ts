@@ -18,10 +18,13 @@ export function serializeResolverOperationNode(
   resolverOperationNode: ResolverOperationNode & { id?: number },
 ) {
   const serializedNode: SerializedResolverOperationNode = {
-    id: resolverOperationNode.id,
     subgraph: resolverOperationNode.subgraph,
     resolverOperationDocument: printCached(resolverOperationNode.resolverOperationDocument),
   };
+
+  if (resolverOperationNode.id != null) {
+    serializedNode.id = resolverOperationNode.id;
+  }
 
   if (resolverOperationNode.resolverDependencies.length) {
     serializedNode.resolverDependencies = resolverOperationNode.resolverDependencies.map(

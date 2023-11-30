@@ -655,7 +655,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         bar: 'B_BAR_FOR_A_FOO_ID',
         baz: 'C_BAZ_FOR_A_FOO_ID',
@@ -686,7 +686,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foos: [
         {
           bar: 'B_BAR_FOR_A_FOO_ID_0',
@@ -725,7 +725,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foos: [
         {
           bar: 'B_BAR_FOR_A_FOO_ID_0',
@@ -815,7 +815,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foos: [
         {
           qux: 'D_QUX_FOR_A_FOO_ID_0',
@@ -843,7 +843,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         myBaz: 'C_BAZ_FOR_A_FOO_ID',
       },
@@ -868,7 +868,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         myBaz: 'C_BAZ_FOR_A_FOO_ID',
         myBar: 'B_BAR_FOR_A_FOO_ID',
@@ -896,7 +896,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         myChild: {
           myBaz: 'C_BAZ_FOR_C_CHILD_ID_FOR_A_FOO_ID',
@@ -922,7 +922,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         quux: 'B_CORGE_FOR_A_FOO_ID',
       },
@@ -947,7 +947,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         child: {
           bar: 'B_CORGE_FOR_C_CHILD_ID_FOR_A_FOO_ID',
@@ -982,7 +982,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       myFoo: {
         bar: 'B_BAR_FOR_A_FOO_ID',
         baz: 'C_BAZ_FOR_A_FOO_ID',
@@ -1015,7 +1015,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foo: {
         id: '1',
         baz: 'C_BAZ_FOR_1',
@@ -1043,7 +1043,7 @@ describe('Execution', () => {
       },
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foo: {
         id: '1',
         baz: 'C_BAZ_FOR_1',
@@ -1069,7 +1069,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       foo: {
         id: '1',
         baz: 'C_BAZ_FOR_1',
@@ -1094,7 +1094,7 @@ describe('Execution', () => {
       operationName: 'Test',
     });
 
-    expect(result.exported).toMatchObject({
+    expect(result.data).toMatchObject({
       fooById: {
         id: '1',
         baz: 'C_BAZ_FOR_1',

@@ -7,7 +7,7 @@ export interface MeshServeCLIServerContext {
 }
 
 export interface MeshServeCLIConfig
-  extends MeshHTTPHandlerConfiguration<MeshServeCLIServerContext> {
+  extends MeshHTTPHandlerConfiguration<MeshServeCLIServerContext, {}> {
   /**
    * Port to listen on (default: `4000`)
    */

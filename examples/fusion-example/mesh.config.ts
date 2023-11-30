@@ -1,7 +1,22 @@
-import type { MeshDevCLIConfig } from '@graphql-mesh/dev-cli';
-import { loadGraphQLHTTPSubgraph } from '@graphql-mesh/dev-cli';
+import {
+  camelCase,
+  createFilterTransform,
+  createNamingConventionTransform,
+  createPrefixTransform,
+  loadGraphQLHTTPSubgraph,
+  MeshDevCLIConfig,
+} from '@graphql-mesh/dev-cli';
+/**
+ * The configuration to serve the supergraph
+ */
+
 import { MeshServeCLIConfig } from '@graphql-mesh/serve-cli';
+import { useResponseCache } from '@graphql-yoga/plugin-response-cache';
 import { loadOpenAPISubgraph } from '@omnigraph/openapi';
+
+/**
+ * The configuration to build a supergraph
+ */
 
 export const devConfig: MeshDevCLIConfig = {
   subgraphs: [
@@ -9,11 +24,27 @@ export const devConfig: MeshDevCLIConfig = {
       sourceHandler: loadOpenAPISubgraph('petstore', {
         source: 'https://petstore.swagger.io/v2/swagger.json',
       }),
+      transforms: [
+        createFilterTransform({
+          rootFieldFilter: (typeName, fieldName) =>
+            typeName === 'Query' && fieldName === 'getPetById',
+        }),
+      ],
     },
     {
       sourceHandler: loadGraphQLHTTPSubgraph('vaccination', {
         endpoint: 'http://localhost:4001/graphql',
       }),
+      transforms: [
+        createPrefixTransform({
+          includeTypes: false,
+          includeRootOperations: true,
+          value: 'Vaccination_',
+        }),
+        createNamingConventionTransform({
+          fieldNames: camelCase,
+        }),
+      ],
     },
   ],
 };
@@ -32,4 +63,10 @@ export const serveConfig: MeshServeCLIConfig = {
       }
     `,
   },
+  plugins: [
+    useResponseCache({
+      session: () => null,
+      includeExtensionMetadata: true,
+    }),
+  ],
 };

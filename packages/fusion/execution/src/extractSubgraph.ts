@@ -58,11 +58,12 @@ function createFilterNodeBySubgraph(subgraph: string) {
         subgraphArgument.value.kind === Kind.STRING &&
         subgraphArgument.value.value === subgraph
       ) {
+        let finalNode = node as any;
         const nameArgument = sourceDirective.arguments?.find(
           argument => argument.name.value === 'name',
         );
         if (nameArgument?.value.kind === Kind.STRING) {
-          return {
+          finalNode = {
             ...node,
             name: {
               kind: Kind.NAME,
@@ -70,7 +71,22 @@ function createFilterNodeBySubgraph(subgraph: string) {
             },
           };
         }
-        return node;
+        const typeArgument = sourceDirective.arguments?.find(
+          argument => argument.name.value === 'type',
+        );
+        if (typeArgument?.value.kind === Kind.STRING) {
+          finalNode = {
+            ...finalNode,
+            type: {
+              kind: Kind.NAMED_TYPE,
+              name: {
+                kind: Kind.NAME,
+                value: typeArgument.value.value,
+              },
+            },
+          };
+        }
+        return finalNode;
       }
     }
     if (sourceDirectives.length > 0) {

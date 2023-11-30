@@ -174,6 +174,7 @@ function removeInternalFieldsFromResponse(response: any): any {
 function prepareExecutionResult(
   planExecutionResult: { exported: any; outputVariableMap: Map<string, any> },
   errors: GraphQLError[],
+  executionPlan: ExecutableOperationPlan,
 ) {
   return {
     data:
@@ -181,6 +182,12 @@ function prepareExecutionResult(
         ? removeInternalFieldsFromResponse(planExecutionResult.exported)
         : undefined,
     errors: errors.length > 0 ? errors : undefined,
+    extensions: globalThis.process?.env?.DEBUG
+      ? {
+          executionPlan: serializeExecutableOperationPlan(executionPlan),
+          outputVariables: Object.fromEntries(planExecutionResult?.outputVariableMap || []),
+        }
+      : undefined,
   };
 }
 
@@ -209,9 +216,9 @@ export function executeOperationPlan({
     errors,
   });
   if (isPromise(res$)) {
-    return res$.then(res => prepareExecutionResult(res, errors));
+    return res$.then(res => prepareExecutionResult(res, errors, executablePlan));
   }
-  return prepareExecutionResult(res$, errors);
+  return prepareExecutionResult(res$, errors, executablePlan);
 }
 
 export function serializeExecutableOperationPlan(executablePlan: ExecutableOperationPlan) {

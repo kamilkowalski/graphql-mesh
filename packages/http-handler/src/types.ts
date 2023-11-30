@@ -4,20 +4,28 @@ import { GraphiQLOptionsOrFactory } from 'graphql-yoga/typings/plugins/use-graph
 import { SupergraphPlugin, TransportEntry } from '@graphql-mesh/fusion-runtime';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { Logger } from '@graphql-mesh/types';
-import { Executor } from '@graphql-tools/utils';
+import { Executor, IResolvers } from '@graphql-tools/utils';
 import { CORSPluginOptions } from '@whatwg-node/server';
 
-export type MeshHTTPPlugin<TServerContext> = Plugin<TServerContext> & SupergraphPlugin;
+export type MeshHTTPPlugin<TServerContext, TUserContext> = Plugin<
+  {},
+  TServerContext,
+  TUserContext
+> &
+  SupergraphPlugin;
 
-export interface MeshHTTPHandlerConfiguration<TServerContext> {
+export type SupergraphConfig =
+  | GraphQLSchema
+  | DocumentNode
+  | string
+  | (() => SupergraphConfig)
+  | Promise<SupergraphConfig>;
+
+export interface MeshHTTPHandlerConfiguration<TServerContext, TUserContext> {
   /**
    * Path to the Supergraph Schema
    */
-  supergraph?:
-    | string
-    | DocumentNode
-    | GraphQLSchema
-    | (() => Promise<string | DocumentNode | GraphQLSchema>);
+  supergraph?: SupergraphConfig;
   /**
    * Supergraph spec
    *
@@ -35,7 +43,7 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
   /**
    * Plugins
    */
-  plugins?: MeshHTTPPlugin<TServerContext>[];
+  plugins?: MeshHTTPPlugin<TServerContext, TUserContext>[];
   /**
    * Configuration for CORS
    */
@@ -61,7 +69,11 @@ export interface MeshHTTPHandlerConfiguration<TServerContext> {
   /**
    * Logger
    */
-  logging?: YogaServerOptions<TServerContext, {}>['logging'] | Logger;
+  logging?: YogaServerOptions<TServerContext, TUserContext>['logging'] | Logger;
+  /**
+   * Additional Resolvers
+   */
+  additionalResolvers?: IResolvers<unknown, TServerContext & TUserContext>;
 }
 
 export interface Transport {

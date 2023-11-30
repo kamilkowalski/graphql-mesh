@@ -7,6 +7,7 @@ import {
   GraphQLSchema,
   introspectionFromSchema,
   isSchema,
+  valueFromASTUntyped,
 } from 'graphql';
 import type { Plugin } from 'graphql-yoga';
 import {
@@ -14,15 +15,19 @@ import {
   ExecutableOperationPlan,
   executeOperationPlan,
   extractSubgraphFromSupergraph,
-  serializeExecutableOperationPlan,
 } from '@graphql-mesh/fusion-execution';
+import { defaultMergedResolver } from '@graphql-tools/delegate';
+import { addResolversToSchema } from '@graphql-tools/schema';
 import {
+  asArray,
   ExecutionRequest,
   Executor,
   getDirective,
+  IResolvers,
   isPromise,
   memoize2of4,
 } from '@graphql-tools/utils';
+import { wrapSchema } from '@graphql-tools/wrap';
 
 export type TransportEntry = {
   kind: string;
@@ -31,18 +36,37 @@ export type TransportEntry = {
   options: any;
 };
 
-export function getSubgraphTransportMapFromSupergraph(supergraph: GraphQLSchema) {
-  const subgraphTransportEntryMap: Record<string, TransportEntry> = {};
+function getTransportDirectives(supergraph: GraphQLSchema) {
   const transportDirectives = getDirective(supergraph, supergraph, 'transport');
   if (transportDirectives?.length) {
-    for (const { kind, subgraph, location, headers, ...options } of transportDirectives) {
-      subgraphTransportEntryMap[subgraph] = {
-        kind,
-        location,
-        headers,
-        options,
-      };
-    }
+    return transportDirectives;
+  }
+  const astNode = supergraph.astNode;
+  if (astNode?.directives?.length) {
+    return astNode.directives
+      .filter(directive => directive.name.value === 'transport')
+      .map(transportDirective =>
+        Object.fromEntries(
+          transportDirective.arguments?.map(argument => [
+            argument.name.value,
+            valueFromASTUntyped(argument.value),
+          ]),
+        ),
+      );
+  }
+  return [];
+}
+
+export function getSubgraphTransportMapFromSupergraph(supergraph: GraphQLSchema) {
+  const subgraphTransportEntryMap: Record<string, TransportEntry> = {};
+  const transportDirectives = getTransportDirectives(supergraph);
+  for (const { kind, subgraph, location, headers, ...options } of transportDirectives) {
+    subgraphTransportEntryMap[subgraph] = {
+      kind,
+      location,
+      headers,
+      options,
+    };
   }
   return subgraphTransportEntryMap;
 }
@@ -159,28 +183,12 @@ export function getExecutorForSupergraph(
       execReq.document,
       execReq.operationName,
     );
-
-    function handleOpExecResult(opExecRes: ExecutionResult): any {
-      if (globalThis.process?.env?.DEBUG) {
-        return {
-          ...opExecRes,
-          extensions: {
-            operationPlan: serializeExecutableOperationPlan(executablePlan),
-          },
-        };
-      }
-      return opExecRes;
-    }
-    const opExecRes$ = executeOperationPlan({
+    return executeOperationPlan({
       executablePlan,
       onExecute: onSubgraphExecute,
       variables: execReq.variables,
       context: execReq.context,
     });
-    if (isPromise(opExecRes$)) {
-      return opExecRes$.then(handleOpExecResult);
-    }
-    return handleOpExecResult(opExecRes$);
   };
 }
 
@@ -189,7 +197,7 @@ export interface PlanCache {
   set(documentStr: string, plan: ExecutableOperationPlan): Promise<any> | any;
 }
 
-export interface YogaSupergraphPluginOptions {
+export interface YogaSupergraphPluginOptions<TServerContext, TUserContext> {
   getSupergraph():
     | GraphQLSchema
     | DocumentNode
@@ -202,6 +210,9 @@ export interface YogaSupergraphPluginOptions {
   ): Executor | Promise<Executor>;
   planCache?: PlanCache;
   polling?: number;
+  additionalResolvers?:
+    | IResolvers<unknown, TServerContext & TUserContext>
+    | IResolvers<unknown, TServerContext & TUserContext>[];
 }
 
 function ensureSchema(source: GraphQLSchema | DocumentNode | string) {
@@ -232,24 +243,40 @@ function getExecuteFnFromExecutor(executor: Executor): typeof execute {
   };
 }
 
-export function useSupergraph(
-  opts: YogaSupergraphPluginOptions,
-): Plugin & { invalidateSupergraph(): void } {
+export function useSupergraph<TServerContext, TUserContext>(
+  opts: YogaSupergraphPluginOptions<TServerContext, TUserContext>,
+): Plugin<{}, TServerContext, TUserContext> & { invalidateSupergraph(): void } {
   let supergraph: GraphQLSchema;
   let executeFn: typeof execute;
+  let executor: Executor;
   let plugins: SupergraphPlugin[];
   function getAndSetSupergraph(): Promise<void> | void {
     const supergraph$ = opts.getSupergraph();
-    if (isPromise(supergraph$)) {
-      return supergraph$.then(supergraph_ => {
-        supergraph = ensureSchema(supergraph_);
-        const executor = getExecutorForSupergraph(supergraph, opts.getTransportExecutor, plugins);
+    function handleLoadedSupergraph(loadedSupergraph: string | GraphQLSchema | DocumentNode) {
+      supergraph = ensureSchema(loadedSupergraph);
+      executor = getExecutorForSupergraph(supergraph, opts.getTransportExecutor, plugins);
+      if (opts.additionalResolvers != null) {
+        supergraph = wrapSchema({
+          schema: supergraph,
+          executor,
+        });
+        const additionalResolvers = asArray(opts.additionalResolvers);
+        for (const additionalResolversObj of additionalResolvers) {
+          supergraph = addResolversToSchema({
+            schema: supergraph,
+            resolvers: additionalResolversObj,
+            updateResolversInPlace: true,
+            defaultFieldResolver: defaultMergedResolver,
+          });
+        }
+      } else {
         executeFn = getExecuteFnFromExecutor(executor);
-      });
+      }
+    }
+    if (isPromise(supergraph$)) {
+      return supergraph$.then(handleLoadedSupergraph);
     } else {
-      supergraph = ensureSchema(supergraph$);
-      const executor = getExecutorForSupergraph(supergraph, opts.getTransportExecutor, plugins);
-      executeFn = getExecuteFnFromExecutor(executor);
+      return handleLoadedSupergraph(supergraph$);
     }
   }
   if (opts.polling) {
@@ -273,14 +300,16 @@ export function useSupergraph(
     onEnveloped({ setSchema }: { setSchema: (schema: GraphQLSchema) => void }) {
       setSchema(supergraph);
     },
-    onExecute({ setExecuteFn, args, setResultAndStopExecution }) {
-      if (args.operationName === 'IntrospectionQuery') {
-        setResultAndStopExecution({
-          data: introspectionFromSchema(supergraph) as any,
-        });
-        return;
+    onExecute({ setExecuteFn, args }) {
+      if (executeFn) {
+        if (args.operationName === 'IntrospectionQuery') {
+          setExecuteFn(() => ({
+            data: introspectionFromSchema(supergraph) as any,
+          }));
+          return;
+        }
+        setExecuteFn(executeFn);
       }
-      setExecuteFn(executeFn);
     },
     invalidateSupergraph() {
       return getAndSetSupergraph();

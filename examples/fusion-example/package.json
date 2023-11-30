@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "build": "node ../../packages/dev-cli/dist/cjs/bin.js",
-    "start": "node ../../packages/serve-cli/dist/cjs/bin.js"
+    "start": "node ../../packages/serve-cli/dist/cjs/bin.js",
+    "start:vaccine": "yarn ts-node vaccination/index.ts"
   },
   "devDependencies": {
     "@graphql-mesh/dev-cli": "^0.0.0",

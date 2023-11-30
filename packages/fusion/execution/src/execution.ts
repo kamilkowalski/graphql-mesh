@@ -255,11 +255,11 @@ export function executeResolverOperationNodesWithDependenciesInParallel({
     }
     function handleFieldOpResults() {
       if (listed) {
-        const existingVals = arrayGet(obj, fieldName.split('.'));
+        const existingVals = arrayGet(obj, fieldName.split('.'), true);
         for (const resultItemIndex in existingVals) {
           const fieldOpItemResults = fieldOpResults.map(resultItem => resultItem[resultItemIndex]);
           const existingVal = existingVals[resultItemIndex];
-          if (Array.isArray(existingVals[resultItemIndex])) {
+          if (Array.isArray(existingVal)) {
             for (const existingValItemIndex in existingVal) {
               Object.assign(
                 existingVal[existingValItemIndex],
@@ -488,14 +488,20 @@ export function executeResolverOperationNode({
 }
 
 // TODO: Maybe can be implemented in a better way
-function arrayGet(obj: any, path: string[]): any {
+function arrayGet(obj: any, path: string[], setIfEmpty = false): any {
   if (Array.isArray(obj)) {
-    return obj.map(item => arrayGet(item, path));
+    return obj.map(item => arrayGet(item, path, setIfEmpty));
   }
   if (path.length === 1) {
-    return _.get(obj, path);
+    const existingVal = _.get(obj, path, setIfEmpty);
+    if (existingVal != null && setIfEmpty) {
+      const newVal = {};
+      _.set(obj, path, newVal);
+      return newVal;
+    }
+    return existingVal;
   }
-  return arrayGet(_.get(obj, path[0]), path.slice(1));
+  return arrayGet(_.get(obj, path[0]), path.slice(1), setIfEmpty);
 }
 
 // export function executeResolverOperationNodesWithDependenciesSequentially(

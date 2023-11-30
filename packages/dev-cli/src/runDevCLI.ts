@@ -1,10 +1,11 @@
 /* eslint-disable import/no-nodejs-modules */
 import { promises as fsPromises } from 'fs';
-import { join } from 'path';
-import { GraphQLSchema } from 'graphql';
+import { isAbsolute, join } from 'path';
+import { DocumentNode, GraphQLSchema, parse } from 'graphql';
 import Spinnies from 'spinnies';
 import { composeSubgraphs, SubgraphConfig } from '@graphql-mesh/fusion-composition';
-import { loadFiles } from '@graphql-tools/load-files';
+import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
+import { loadTypedefs } from '@graphql-tools/load';
 import { printSchemaWithDirectives } from '@graphql-tools/utils';
 import { MeshDevCLIConfig } from './types';
 
@@ -39,14 +40,12 @@ export async function runDevCLI(
   const subgraphConfigsForComposition: SubgraphConfig[] = await Promise.all(
     meshDevCLIConfig.subgraphs.map(async subgraphCLIConfig => {
       const { name: subgraphName, schema$ } = subgraphCLIConfig.sourceHandler();
-      spinnies.add(subgraphName, { text: `Loading subgraph` });
+      spinnies.add(subgraphName, { text: `Loading subgraph ${subgraphName}` });
       let subgraphSchema: GraphQLSchema;
       try {
         subgraphSchema = await schema$;
       } catch (e) {
-        spinnies.fail(subgraphName, {
-          text: `Failed to load subgraph ${subgraphName} - ${e.stack}`,
-        });
+        console.log(`Failed to load subgraph ${subgraphName} - ${e.stack}`);
         return processExit(1);
       }
       spinnies.succeed(subgraphName, { text: `Loaded subgraph ${subgraphName}` });
@@ -58,12 +57,18 @@ export async function runDevCLI(
     }),
   );
   spinnies.add('composition', { text: `Composing supergraph` });
-  let typeDefs: string[] | undefined;
-  if (meshDevCLIConfig.typeDefs?.length) {
-    typeDefs = await loadFiles(meshDevCLIConfig.typeDefs);
+  let additionalTypeDefs: (DocumentNode | string)[] | undefined;
+  if (meshDevCLIConfig.additionalTypeDefs != null) {
+    const result = await loadTypedefs(meshDevCLIConfig.additionalTypeDefs, {
+      noLocation: true,
+      assumeValid: true,
+      assumeValidSDL: true,
+      loaders: [new GraphQLFileLoader()],
+    });
+    additionalTypeDefs = result.map(r => r.document || r.rawSDL);
   }
   let composedSchema = composeSubgraphs(subgraphConfigsForComposition, {
-    typeDefs,
+    typeDefs: additionalTypeDefs,
   });
   if (meshDevCLIConfig.transforms?.length) {
     spinnies.add('transforms', { text: `Applying transforms` });
@@ -77,9 +82,34 @@ export async function runDevCLI(
   spinnies.add('write', { text: `Writing supergraph` });
   const printedSupergraph = printSchemaWithDirectives(composedSchema);
 
-  const supergraphFileName = process.env.MESH_SUPERGRAPH_FILE_NAME || 'supergraph.graphql';
-  const supergraphPath =
-    process.env.MESH_SUPERGRAPH_PATH || join(process.cwd(), supergraphFileName);
+  const supergraphFileName = meshDevCLIConfig.target || './supergraph.graphql';
+  const supergraphPath = isAbsolute(supergraphFileName)
+    ? join(process.cwd(), supergraphFileName)
+    : supergraphFileName;
+
+  let writtenData: string;
+  if (supergraphPath.endsWith('.json')) {
+    writtenData = JSON.stringify(parse(writtenData, { noLocation: true }), null, 2);
+  } else if (
+    supergraphPath.endsWith('.graphql') ||
+    supergraphPath.endsWith('.gql') ||
+    supergraphPath.endsWith('.graphqls') ||
+    supergraphPath.endsWith('.gqls')
+  ) {
+    writtenData = printedSupergraph;
+  } else if (
+    supergraphPath.endsWith('.ts') ||
+    supergraphPath.endsWith('.cts') ||
+    supergraphPath.endsWith('.mts') ||
+    supergraphPath.endsWith('.js') ||
+    supergraphPath.endsWith('.cjs') ||
+    supergraphPath.endsWith('.mjs')
+  ) {
+    writtenData = `export default /* GraphQL */ \`\n${printedSupergraph}\n\``;
+  } else {
+    console.error(`Unsupported file extension for ${supergraphPath}`);
+    return processExit(1);
+  }
   await fsPromises.writeFile(supergraphPath, printedSupergraph, 'utf8');
   spinnies.succeed('write', { text: `Written supergraph to ${supergraphPath}` });
   spinnies.succeed('main', { text: 'Finished Mesh Dev CLI' });

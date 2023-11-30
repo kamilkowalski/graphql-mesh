@@ -1,9 +1,10 @@
-import { GraphQLSchema } from 'graphql';
+import { DocumentNode, GraphQLSchema } from 'graphql';
 
 export interface MeshDevCLIConfig {
   subgraphs: MeshDevCLISubgraphConfig[];
   transforms?: MeshDevCLITransformConfig[];
-  typeDefs?: string[];
+  additionalTypeDefs?: string | DocumentNode | (string | DocumentNode)[];
+  target?: string;
 }
 
 export interface MeshDevCLISubgraphConfig {
