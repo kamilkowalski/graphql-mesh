@@ -255,14 +255,27 @@ export function executeResolverOperationNodesWithDependenciesInParallel({
     }
     function handleFieldOpResults() {
       if (listed) {
-        const existingVals = arrayGet(obj, fieldName.split('.'), true);
+        const existingVals = arrayGet(
+          obj,
+          fieldName.split('.'),
+          Array.isArray(fieldOpResults[0]) ? 'array' : 'object',
+        );
         for (const resultItemIndex in existingVals) {
           const fieldOpItemResults = fieldOpResults.map(resultItem => resultItem[resultItemIndex]);
-          const existingVal = existingVals[resultItemIndex];
+          let existingVal = existingVals[resultItemIndex];
+          if (!existingVal) {
+            existingVal = Array.isArray(fieldOpItemResults[0]) ? [] : {};
+            existingVals[resultItemIndex] = existingVal;
+          }
           if (Array.isArray(existingVal)) {
             for (const existingValItemIndex in existingVal) {
+              let existingValItem = existingVal[existingValItemIndex];
+              if (!existingValItem) {
+                existingValItem = {};
+                existingVal[existingValItemIndex] = existingValItem;
+              }
               Object.assign(
-                existingVal[existingValItemIndex],
+                existingValItem,
                 ...fieldOpItemResults.map(
                   fieldOpItemResult => fieldOpItemResult[existingValItemIndex],
                 ),
@@ -488,14 +501,14 @@ export function executeResolverOperationNode({
 }
 
 // TODO: Maybe can be implemented in a better way
-function arrayGet(obj: any, path: string[], setIfEmpty = false): any {
+function arrayGet(obj: any, path: string[], setIfEmpty: 'object' | 'array' | false = false): any {
   if (Array.isArray(obj)) {
     return obj.map(item => arrayGet(item, path, setIfEmpty));
   }
   if (path.length === 1) {
     const existingVal = _.get(obj, path, setIfEmpty);
-    if (existingVal != null && setIfEmpty) {
-      const newVal = {};
+    if (existingVal == null && setIfEmpty) {
+      const newVal = setIfEmpty === 'array' ? [] : {};
       _.set(obj, path, newVal);
       return newVal;
     }
