@@ -12,7 +12,7 @@ for **SENDING** hashes to the server.
 You have to define your operations in your configuration file like below;
 
 ```yml
-documents: ./documents/*.graphql
+documents: [./documents/*.graphql]
 ```
 
 Then GraphQL Mesh will generate a persisted operations map under `.mesh` artifacts as
@@ -39,7 +39,7 @@ query Test {
 And assume that you have the following configuration file;
 
 ```yml filename=".meshrc.yml"
-documents: ./test.graphql
+documents: [./test.graphql]
 ```
 
 Then GraphQL Mesh will generate `.mesh/persisted_operations.json`;
