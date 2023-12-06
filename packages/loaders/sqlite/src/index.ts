@@ -32,10 +32,11 @@ export function loadSQLiteSubgraph(name: string, opts: GraphQLSQLiteLoaderOpts) 
   return ({ cwd }: { cwd: string }) => ({
     name,
     schema$: loadGraphQLSchemaFromOptions(opts).then(schema => {
-      schema.extensions = schema.extensions || {};
-      const directivesObj: any = schema.extensions.directives || {};
-      directivesObj.transport = {
+      const extensionsObj: any = (schema.extensions = schema.extensions || {});
+      extensionsObj.directives ||= {};
+      extensionsObj.directives.transport = {
         kind: 'sqlite',
+        subgraph: name,
         location: opts.infile || opts.db,
         options: {
           type: opts.infile != null ? 'infile' : 'db',

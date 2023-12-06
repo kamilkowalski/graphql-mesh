@@ -4,11 +4,13 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "mesh dev"
+    "build": "node ../../packages/dev-cli/dist/cjs/bin.js",
+    "start": "node ../../packages/serve-cli/dist/cjs/bin.js"
   },
   "dependencies": {
-    "@graphql-mesh/cli": "0.88.2",
-    "@graphql-mesh/tuql": "0.96.1",
+    "@graphql-mesh/dev-cli": "0.0.0",
+    "@graphql-mesh/serve-cli": "0.0.0",
+    "@omnigraph/sqlite": "0.0.0",
     "graphql": "16.8.1"
   },
   "resolutions": {
