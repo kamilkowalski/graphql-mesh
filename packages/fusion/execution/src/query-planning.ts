@@ -201,7 +201,7 @@ export function createResolveNode(
   };
 }
 
-function getDefDirectives(astNode?: ASTNode | null) {
+function getDefDirectives({ astNode, extensions }: { astNode?: ASTNode | null; extensions?: any }) {
   const directiveAnnotations: DirectiveAnnotation[] = [];
   if (astNode != null && 'directives' in astNode) {
     astNode.directives?.forEach(directiveNode => {
@@ -217,6 +217,26 @@ function getDefDirectives(astNode?: ASTNode | null) {
           ) ?? {},
       });
     });
+  }
+  if (extensions?.directives != null) {
+    for (const directiveName in extensions.directives) {
+      const directiveExt = extensions.directives[directiveName];
+      if (directiveExt != null) {
+        if (Array.isArray(directiveExt)) {
+          directiveExt.forEach(directive => {
+            directiveAnnotations.push({
+              name: directiveName,
+              args: directive,
+            });
+          });
+        } else {
+          directiveAnnotations.push({
+            name: directiveName,
+            args: directiveExt,
+          });
+        }
+      }
+    }
   }
   return directiveAnnotations;
 }
@@ -253,7 +273,7 @@ export function visitFieldNodeForTypeResolvers(
 
   const typeFieldMap = type.getFields();
 
-  const typeDirectives = getDefDirectives(type.astNode);
+  const typeDirectives = getDefDirectives(type);
 
   // Visit for type resolvers
 
@@ -282,7 +302,7 @@ export function visitFieldNodeForTypeResolvers(
     if (!fieldDefInType) {
       throw new Error(`No field definition found for ${fieldNameInNode}`);
     }
-    const fieldDirectives = getDefDirectives(fieldDefInType.astNode);
+    const fieldDirectives = getDefDirectives(fieldDefInType);
     const sourceDirectives = fieldDirectives.filter(d => d.name === 'source');
     const sourceDirectiveForThisSubgraph = sourceDirectives.find(
       d => d.args?.subgraph === parentSubgraph,
@@ -383,7 +403,7 @@ export function visitFieldNodeForTypeResolvers(
         ctx,
       );
       newFieldNode = newFieldNodeForSubgraph;
-      let fieldResolveFieldDependencyMap: Map<string, ResolverOperationNode[]> | undefined;
+      const fieldResolveFieldDependencyMap = new Map<string, ResolverOperationNode[]>();
       const fieldSubgraph = resolverDirective.subgraph;
       const fieldResolverDependencies: ResolverOperationNode[] = [];
       const fieldResolverOperationNodes: ResolverOperationNode[] = [
@@ -391,7 +411,7 @@ export function visitFieldNodeForTypeResolvers(
           subgraph: fieldSubgraph,
           resolverOperationDocument,
           resolverDependencies: fieldResolverDependencies,
-          resolverDependencyFieldMap: fieldResolveFieldDependencyMap || new Map(),
+          resolverDependencyFieldMap: fieldResolveFieldDependencyMap,
           batch,
         },
       ];
@@ -412,7 +432,14 @@ export function visitFieldNodeForTypeResolvers(
           ctx,
         );
         resolverOperationResolvedFieldNode = newResolvedFieldNode;
-        fieldResolveFieldDependencyMap = newFieldResolverDependencyMap;
+        for (const [fieldName, dependencies] of newFieldResolverDependencyMap.entries()) {
+          let existingDependencies = fieldResolveFieldDependencyMap.get(fieldName);
+          if (!existingDependencies) {
+            existingDependencies = [];
+            fieldResolveFieldDependencyMap.set(fieldName, existingDependencies);
+          }
+          existingDependencies.push(...dependencies);
+        }
         fieldResolverDependencies.push(...subFieldResolverOperationNodes);
         _.set(resolverOperationDocument, resolvedFieldPath, resolverOperationResolvedFieldNode);
       } else if (isAbstractType(namedFieldType)) {
@@ -420,7 +447,6 @@ export function visitFieldNodeForTypeResolvers(
           resolverOperationDocument,
           resolvedFieldPath,
         ) as FlattenedFieldNode;
-        fieldResolveFieldDependencyMap = new Map();
         for (const possibleType of supergraph.getPossibleTypes(namedFieldType)) {
           const {
             newFieldNode: newResolvedFieldNode,

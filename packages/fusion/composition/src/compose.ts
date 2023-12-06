@@ -1,4 +1,6 @@
 import {
+  ASTNode,
+  ConstDirectiveNode,
   getNamedType,
   GraphQLField,
   GraphQLNamedType,
@@ -6,19 +8,12 @@ import {
   isObjectType,
   isSpecifiedScalarType,
   OperationTypeNode,
+  valueFromASTUntyped,
 } from 'graphql';
 import { pascalCase } from 'pascal-case';
 import { snakeCase } from 'snake-case';
 import { mergeSchemas, MergeSchemasConfig } from '@graphql-tools/schema';
-import {
-  asArray,
-  DirectableGraphQLObject,
-  getDirectives,
-  getRootTypeMap,
-  getRootTypes,
-  MapperKind,
-  mapSchema,
-} from '@graphql-tools/utils';
+import { asArray, getRootTypeMap, getRootTypes, MapperKind, mapSchema } from '@graphql-tools/utils';
 
 export interface SubgraphConfig {
   name: string;
@@ -79,7 +74,7 @@ export function composeSubgraphs(
           });
         }
         const directives: Record<string, any> = {
-          ...getDirectiveExtensions(schema, type),
+          ...getDirectiveExtensions(type),
           source: {
             subgraph: subgraphName,
             name: type.name,
@@ -106,7 +101,7 @@ export function composeSubgraphs(
         extensions: {
           ...fieldConfig.extensions,
           directives: {
-            ...getDirectiveExtensions(schema, fieldConfig),
+            ...getDirectiveExtensions(fieldConfig),
             source: {
               subgraph: subgraphName,
               name: fieldName,
@@ -120,7 +115,7 @@ export function composeSubgraphs(
         extensions: {
           ...valueConfig.extensions,
           directives: {
-            ...getDirectiveExtensions(schema, valueConfig),
+            ...getDirectiveExtensions(valueConfig),
             source: {
               subgraph: subgraphName,
               name: externalValue,
@@ -160,7 +155,7 @@ export function composeSubgraphs(
           extensions: {
             ...fieldConfig.extensions,
             directives: {
-              ...getDirectiveExtensions(schema, fieldConfig),
+              ...getDirectiveExtensions(fieldConfig),
               resolver: {
                 subgraph: subgraphName,
                 operation: operationString,
@@ -191,7 +186,7 @@ export function composeSubgraphs(
         if (isSpecifiedScalarType(type) || rootTypes.has(type as any)) {
           return type;
         }
-        const directives = getDirectiveExtensions(transformedSubgraph, type);
+        const directives = getDirectiveExtensions(type);
         // Automatic type merging configuration based on ById and ByIds naming conventions after transforms
         addAnnotationsForSemanticConventions({
           type,
@@ -220,13 +215,48 @@ export function composeSubgraphs(
   });
 }
 
-function getDirectiveExtensions(schema: GraphQLSchema, directableNode: DirectableGraphQLObject) {
-  const directives = getDirectives(schema, directableNode);
-  const directivesObject: Record<string, any> = {};
-  for (const directive of directives) {
-    directivesObject[directive.name] = directive.args;
+function getDirectiveExtensions(directableObj: {
+  astNode?: ASTNode & { directives?: readonly ConstDirectiveNode[] };
+  extensions?: any;
+}): Record<string, any[]> {
+  const directiveExtensions: Record<string, any[]> = {};
+  if (directableObj.astNode?.directives?.length) {
+    directableObj.astNode.directives.forEach(directive => {
+      let existingDirectiveExtensions = directiveExtensions[directive.name.value];
+      if (!existingDirectiveExtensions) {
+        existingDirectiveExtensions = [];
+        directiveExtensions[directive.name.value] = existingDirectiveExtensions;
+      }
+      existingDirectiveExtensions.push(
+        Object.fromEntries(
+          directive.arguments.map(arg => [arg.name.value, valueFromASTUntyped(arg.value)]),
+        ),
+      );
+    });
   }
-  return directivesObject;
+  if (directableObj.extensions?.directives) {
+    for (const directiveName in directableObj.extensions.directives) {
+      const directiveObjs = directableObj.extensions.directives[directiveName];
+      if (Array.isArray(directiveObjs)) {
+        directiveObjs.forEach(directiveObj => {
+          let existingDirectiveExtensions = directiveExtensions[directiveName];
+          if (!existingDirectiveExtensions) {
+            existingDirectiveExtensions = [];
+            directiveExtensions[directiveName] = existingDirectiveExtensions;
+          }
+          existingDirectiveExtensions.push(directiveObj);
+        });
+      } else {
+        let existingDirectiveExtensions = directiveExtensions[directiveName];
+        if (!existingDirectiveExtensions) {
+          existingDirectiveExtensions = [];
+          directiveExtensions[directiveName] = existingDirectiveExtensions;
+        }
+        existingDirectiveExtensions.push(directiveObjs);
+      }
+    }
+  }
+  return directiveExtensions;
 }
 
 function addAnnotationsForSemanticConventions({

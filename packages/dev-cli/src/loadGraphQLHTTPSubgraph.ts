@@ -6,6 +6,7 @@ import {
   IntrospectionQuery,
 } from 'graphql';
 import { ExecutionResult } from '@graphql-tools/utils';
+import { LoaderContext } from './types';
 
 export interface GraphQLSubgraphLoaderHTTPConfiguration {
   /**
@@ -75,11 +76,12 @@ export function loadGraphQLHTTPSubgraph(
     schemaHeaders,
   }: GraphQLSubgraphLoaderHTTPConfiguration,
 ) {
-  return () => {
+  return (ctx: LoaderContext) => {
     if (source) {
-      const schema$ = fetch(source, {
-        headers: schemaHeaders,
-      })
+      const schema$ = ctx
+        .fetch(source, {
+          headers: schemaHeaders,
+        })
         .then(res => res.text())
         .then(sdl =>
           buildSchema(sdl, {
@@ -111,15 +113,16 @@ export function loadGraphQLHTTPSubgraph(
         schema$,
       };
     }
-    const schema$ = fetch(endpoint, {
-      method: method || (useGETForQueries ? 'GET' : 'POST'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query: getIntrospectionQuery(),
-      }),
-    })
+    const schema$ = ctx
+      .fetch(endpoint, {
+        method: method || (useGETForQueries ? 'GET' : 'POST'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: getIntrospectionQuery(),
+        }),
+      })
       .then(res => res.json())
       .then((result: ExecutionResult<IntrospectionQuery>) =>
         buildClientSchema(result.data, {
