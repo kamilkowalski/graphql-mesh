@@ -1,5 +1,13 @@
 # @graphql-mesh/transform-prune
 
+## 0.98.8
+
+### Patch Changes
+
+- Updated dependencies
+  [[`88d6232`](https://github.com/ardatan/graphql-mesh/commit/88d623289e187435ddc88bbe3f4623a727101207)]:
+  - @graphql-mesh/types@0.98.8
+
 ## 0.98.7
 
 ### Patch Changes
